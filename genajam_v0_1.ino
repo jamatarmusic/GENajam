@@ -245,6 +245,9 @@ case 1:
     case btnSELECT:
     {
     mode = mode + 1;
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("FM Edit Mode");
     if(mode > 2){ // loop mode
     mode = 1;
     }
@@ -260,6 +263,63 @@ break;
 //======================================================= MODE 2
 case 2:
 {
+    
+    switch (lcd_key)               // depending on which button was pushed, we perform an action
+    {
+    case btnRIGHT:
+    {
+    tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]+1;
+    if(tfifilenumber[tfichannel-1]==(n)){ // if max files exceeded, loop back to start
+    tfifilenumber[tfichannel-1]=0;
+    }   
+    tfiselect(tfifilenumber[tfichannel-1], tfichannel);
+    break;
+    }
+    
+    case btnLEFT:
+    {
+    tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]-1;
+    if(tfifilenumber[tfichannel-1]==-1){ // if min files exceeded, loop back to end
+    tfifilenumber[tfichannel-1]=n-1;
+    }
+    tfiselect(tfifilenumber[tfichannel-1], tfichannel);
+    break;
+    }
+    
+    case btnUP:
+    {
+    tfichannel=tfichannel+1;
+    if(tfichannel==(7)){ // if max channels reached, loop around
+    tfichannel=1;
+    }
+    channelselect(tfifilenumber[tfichannel-1], tfichannel);
+    break;
+    }
+    
+    case btnDOWN:
+    {
+    tfichannel=tfichannel-1;
+    if(tfichannel==(0)){ // if max channels reached, loop around
+    tfichannel=6;
+    }
+    channelselect(tfifilenumber[tfichannel-1], tfichannel);
+    break;
+    }
+    
+    case btnSELECT:
+    {
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("Preset Mode");
+    mode = mode + 1;
+    if(mode > 2){ // loop mode
+    mode = 1;
+    }
+    break;
+    }
+    
+    } 
+
 
 break;  
 }
