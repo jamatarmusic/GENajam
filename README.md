@@ -7,6 +7,10 @@ This open source program is written for the Arduino Uno or Nano. Once the softwa
 
 Currently uses the LCD Keypad Shield by DFRobot and a custom midi input / micro SD card reader shield.
 
+SD card CS pin goes to pin 3. Use this guide for the midi output: https://www.notesandvolts.com/2015/03/midi-for-arduino-build-midi-output.html
+
+Everything else is on standard pins.
+
 Uses the following Arduino libraries:
 
 #include <MIDI.h> // Forty Seven Effects Midi Library
@@ -17,8 +21,11 @@ Uses the following Arduino libraries:
 
 #include "FreeStack.h" // https://github.com/greiman/SdFat/blob/master/src/FreeStack.h
 
-#include <LiquidCrystal.h> 
+#include <LiquidCrystal.h> // standard liquid crystal arduino library
 
+
+Current state:
+version 0.1 - can load up to 64 TFI instrument files off the root on an SD card and you can select instruments for channels 1-6 individually.
 
 Build Roadmap:
 1. Read from SD Card
