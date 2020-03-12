@@ -5,7 +5,7 @@ A physical front end interface for GenMDM for Mega Drive. This hardware device w
 
 This open source program is written for the Arduino Uno or Nano. Once the software hits alpha with a physical prototype, I'll include a schematic so you can build your own!
 
-Currently uses the LCD Keypad Shield by DFRobot and a custom midi input / micro SD card reader shield.
+Currently uses the LCD Keypad Shield by DFRobot, a standard mini SD card reader and Fourty Seven Effects midi input and output. It will be expanded with 4 potentiometers for controlling operators 1-4 on each channel.
 
 SD card CS pin goes to pin 3. Use this guide for the midi output: https://www.notesandvolts.com/2015/03/midi-for-arduino-build-midi-output.html
 
