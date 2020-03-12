@@ -7,9 +7,12 @@ This open source program is written for the Arduino Uno or Nano. Once the softwa
 
 Currently uses the LCD Keypad Shield by DFRobot, a standard mini SD card reader and Fourty Seven Effects midi input and output. It will be expanded with 4 potentiometers for controlling operators 1-4 on each channel.
 
-SD card CS pin goes to pin 3. Use this guide for the midi output: https://www.notesandvolts.com/2015/03/midi-for-arduino-build-midi-output.html
+SD card CS pin goes to pin 3. Other pins as standard here: https://create.arduino.cc/projecthub/electropeak/sd-card-module-with-arduino-how-to-read-write-data-37f390
 
-Everything else is on standard pins.
+Use this guide for the midi output: https://www.notesandvolts.com/2015/03/midi-for-arduino-build-midi-output.html
+
+For the LCD Keypad shield hookup via prototype cables (male to female prototype cables), check here:
+https://create.arduino.cc/projecthub/electropeak/using-1602-lcd-keypad-shield-w-arduino-w-examples-e02d95
 
 Uses the following Arduino libraries:
 
