@@ -27,6 +27,8 @@ Uses the following Arduino libraries:
 #include <LiquidCrystal.h> // standard liquid crystal arduino library
 
 
+There is a folder of sample TFI files that you can test by loading them to the root of an SD card.
+
 Current state:
 version 0.1 - can load up to 64 TFI instrument files off the root on an SD card and you can select instruments for channels 1-6 individually.
 
