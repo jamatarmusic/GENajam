@@ -587,10 +587,11 @@ void tfisend(int opnarray[42], int sendchannel)
     fmsettings[sendchannel][48] = 0; //OP4 Amplitude Modulation
     fmsettings[sendchannel][49] = 0; //Patch is uneditted
 
+    /*
     MIDI.sendNoteOn(60, 127, sendchannel);
     delay(200);           
     MIDI.sendNoteOff(60, 0, sendchannel);  
-
+    */
     
 }
 
@@ -759,7 +760,7 @@ void fmparamdisplay()
   
 }
 
-void MyHandleNoteOn(byte channel, byte pitch, byte velocity) { 
+void MyHandleNoteOn(byte channel, byte pitch, byte velocity) {
 MIDI.sendNoteOn(pitch, velocity, channel);
 }
 
