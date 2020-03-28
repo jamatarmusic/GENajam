@@ -38,7 +38,7 @@ byte emojiprogram[] = {
   B00101
 };
 
-/*
+
 byte emojipoly[] = {
   B11100,
   B10100,
@@ -46,17 +46,17 @@ byte emojipoly[] = {
   B10000,
   B00101,
   B10101,
-  B11010,
-  B00000
+  B10010,
+  B11010
 };
-*/
+
 
 //debouncing
 
 unsigned long buttonpushed = 0;      // when a button is pushed, mark what millis it was pushed
-uint16_t debouncedelay = 200;   //the debounce time which user sets prior to run
+const uint16_t debouncedelay = 200;   //the debounce time which user sets prior to run
 unsigned long messagestart = 0; // when a message starts, mark what millis it displayed at
-uint16_t messagedelay = 1000; // how long to display messages for
+const uint16_t messagedelay = 1000; // how long to display messages for
 uint8_t refreshscreen = 0; // trigger refresh of screen but only once
 
 //-------------------------------------------
@@ -71,13 +71,13 @@ SdFile dirFile;
 const uint8_t MaxNumberOfChars = 17; // only show 16 characters coz LCD
 
 // Number of files found.
-uint8_t n = 0;
+uint16_t n = 0;
 
 // How many files to handle
-const uint8_t nMax = 64;
+const uint16_t nMax = 32;
 
 // Position of file's directory entry.
-uint8_t dirIndex[nMax];
+uint16_t dirIndex[nMax];
 
 //----------------------------------------------
 
@@ -85,15 +85,22 @@ uint8_t dirIndex[nMax];
 MIDI_CREATE_DEFAULT_INSTANCE();
 
 // start position of each channel file cursor
-uint8_t tfifilenumber[6] = {0, 0, 0, 0, 0, 0};
+int tfifilenumber[6] = {0, 0, 0, 0, 0, 0};
 
 //set the initial midi channel
-uint8_t tfichannel=1;
+int tfichannel=1;
 
 // switch between settings
 uint8_t mode=1;
 // 1) preset mono
 // 2) settings mono
+// 3) preset poly
+
+// polyphony settings
+uint8_t polynote[6] = {0, 0, 0, 0, 0, 0};
+bool polyon[6] = {0, 0, 0, 0, 0, 0};
+uint8_t noteson = 0;
+uint8_t lowestnote = 0; // don't steal the lowest note
 
 // fm parameter screen navigation
 uint8_t fmscreen=1;
@@ -101,14 +108,28 @@ uint8_t fmscreen=1;
 // global variable for storing FM settings for each channel
 uint8_t fmsettings[6][50];
 
+uint8_t potPin1 = A1;
+uint8_t potPin2 = A2;
+uint8_t potPin3 = A3;
+uint8_t potPin4 = A4;
+
+uint16_t readvalue;
+uint8_t cc;
+
 void setup()
 {
+    
+    //setup the input pots
+    pinMode(potPin1, INPUT);
+    pinMode(potPin2, INPUT);
+    pinMode(potPin3, INPUT);
+    pinMode(potPin4, INPUT);
     
     lcd.begin(16, 2);
 
     lcd.createChar(0, emojichannel);
     lcd.createChar(1, emojiprogram);
-    //lcd.createChar(2, emojipoly);
+    lcd.createChar(2, emojipoly);
 
 
     lcd.clear();
@@ -131,7 +152,8 @@ void setup()
       sd.initErrorHalt();
     }
 
-  MIDI.begin(MIDI_CHANNEL_OMNI);
+  MIDI.begin(MIDI_CHANNEL_OMNI); // read all channels
+  MIDI.turnThruOff(); // turn off soft midi thru
 
   MIDI.setHandleNoteOn(MyHandleNoteOn);
   MIDI.setHandleNoteOff(MyHandleNoteOff); 
@@ -223,6 +245,13 @@ MIDI.read();
         refreshscreen=0;
         break;
       }
+
+      case 3:
+      {
+        channelselect(); // just reload the channel info for the current channel
+        refreshscreen=0;
+        break;
+      }      
       
     } // end mode check
  
@@ -288,7 +317,7 @@ MIDI.read();
       lcd.print("FM Edit Mode");
       refreshscreen=1;
       
-      if(mode > 2){ // loop mode
+      if(mode > 3){ // loop mode
       mode = 1;
       }
       break;
@@ -349,21 +378,111 @@ MIDI.read();
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("Preset Mode");
+      lcd.print("Preset Mode POLY");
+      refreshscreen=1;
+      break;
+      
+      if(mode > 3){ // loop mode
+      mode = 1;
+      }
+      break;
+      }
+      
+      }
+
+      lcd.setCursor(1,1);
+      readvalue = analogRead(potPin1);
+      cc = readvalue>>3;
+      if (cc<100) lcd.print("0");
+      if (cc<10) lcd.print("0");
+      lcd.print(cc);
+      lcd.print(" ");
+      
+      readvalue = analogRead(potPin2);
+      cc = readvalue>>3;
+      if (cc<100) lcd.print("0");
+      if (cc<10) lcd.print("0");
+      lcd.print(cc);
+      lcd.print(" ");
+      
+      readvalue = analogRead(potPin3);
+      cc = readvalue>>3;
+      if (cc<100) lcd.print("0");
+      if (cc<10) lcd.print("0");
+      lcd.print(cc);
+      lcd.print(" ");
+      
+      readvalue = analogRead(potPin4);
+      cc = readvalue>>3;
+      if (cc<100) lcd.print("0");
+      if (cc<10) lcd.print("0");
+      lcd.print(cc);
+      lcd.print(" ");
+  
+  
+  break;  
+  }
+
+
+  //======================================================= MODE 3
+  case 3:
+  {
+      switch (lcd_key)               // depending on which button was pushed, we perform an action
+      {
+      case btnRIGHT:
+      {
+      tfichannel=1;
+      tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]+1;
+      if(tfifilenumber[tfichannel-1]==(n)){ // if max files exceeded, loop back to start
+      tfifilenumber[tfichannel-1]=0;
+      }
+      for (int i = 1; i <= 5; i++) {
+        tfifilenumber[i] = tfifilenumber[0];
+      }
+      for (int i = 1; i <= 6; i++) {
+        tfichannel=i;
+        tfiselect();
+      }      
+      break;
+      }
+      
+      case btnLEFT:
+      {
+      tfichannel=1;
+      tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]-1;
+      if(tfifilenumber[tfichannel-1]==-1){ // if min files exceeded, loop back to end
+      tfifilenumber[tfichannel-1]=n-1;
+      }
+      for (int i = 1; i <= 5; i++) {
+        tfifilenumber[i] = tfifilenumber[0];
+      }
+      for (int i = 1; i <= 6; i++) {
+        tfichannel=i;
+        tfiselect();
+      }    
+      break;
+      }
+      
+      case btnSELECT:
+      {
+      mode = mode + 1;
+      
+      messagestart = millis();
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("Preset Mode MONO");
       refreshscreen=1;
       
-      if(mode > 2){ // loop mode
+      if(mode > 3){ // loop mode
       mode = 1;
       }
       break;
       }
       
       } 
-  
-  
+      
   break;  
   }
-
   
   } // end mode check
 
@@ -416,11 +535,13 @@ int read_LCD_buttons() // function for reading the buttons
 
 void tfiselect() //load a tfi , send the midi, update screen
 {
+
     if (!tfifile.open(&dirFile, dirIndex[tfifilenumber[tfichannel-1]], O_RDONLY)) {
+      lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("ERROR:");
       lcd.setCursor(0,1);
-      lcd.print("CANNOT READ TFI");
+      lcd.print("CANNOT READ TFI ");
       sd.errorHalt(F("open"));
     }
 
@@ -446,8 +567,14 @@ void tfiselect() //load a tfi , send the midi, update screen
     //show filename on screen
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.write(byte(0));
-    lcd.print(tfichannel);
+    if (mode==3) {  
+      lcd.write(byte(2));
+      lcd.print(" ");     
+    }
+    else {
+      lcd.write(byte(0));
+      lcd.print(tfichannel);  
+    }
     lcd.print(" ");
     lcd.write(byte(1));
     if ((tfifilenumber[tfichannel-1]+1)<100) lcd.print("0");
@@ -486,8 +613,14 @@ void channelselect() //select a new channel, display current tfi on screen
     //show filename on screen
     lcd.clear();
     lcd.setCursor(0,0);
-    lcd.write(byte(0));
-    lcd.print(tfichannel);
+    if (mode==3) {  
+      lcd.write(byte(2));
+      lcd.print(" ");     
+    }
+    else {
+      lcd.write(byte(0));
+      lcd.print(tfichannel);  
+    }
     lcd.print(" ");
     lcd.write(byte(1));
     if ((tfifilenumber[tfichannel-1]+1)<100) lcd.print("0");
@@ -761,10 +894,84 @@ void fmparamdisplay()
 }
 
 void MyHandleNoteOn(byte channel, byte pitch, byte velocity) {
-MIDI.sendNoteOn(pitch, velocity, channel);
+
+velocity = velocity*(1.7);
+if (velocity > 127) velocity = 127;
+
+if (mode == 3) // if we're in poly mode
+{  
+  
+  noteson++; // add one to the notes currently held down
+
+  if (noteson < 7) // if less than 7 notes are playing
+  {
+    
+    for (int i = 0; i <= 5; i++) // voice scan to check for voices that are free
+    {
+      if (polyon[i]==0) // if the voice isn't on
+      {
+        polyon[i]=1; // turn voice on
+        MIDI.sendNoteOn(pitch, velocity, i+1);
+        polynote[i] = pitch; // save the pitch of the note against the voice number
+        break;  
+      }
+    }
+
+  }
+  else // time to note steal if there are more than 6 notes playing
+  {  
+    int randchannel = random(5); // fuck if for now we're doing random off polyphony
+    int highestnote = 0; // use the highest note instead
+    int highestchannel = 0;
+    for (int i = 0; i <= 5; i++) // but first check for off notes
+    {
+      if (lowestnote<polynote[i]) lowestnote=polynote[i];
+      if (polynote[i]>highestnote) { highestnote=polynote[i]; highestchannel=i; }
+      if (polyon[i]==0) randchannel=i;
+    }
+    int randnote = polynote[randchannel];
+    if (randnote<lowestnote) // if the random note chosen was the lowest note
+    {
+      randchannel = highestchannel;
+    }
+    polyon[randchannel]=1; // turn it on just in case
+    
+    MIDI.sendNoteOff(randnote, velocity, randchannel+1); // turn off that old note
+    MIDI.sendNoteOn(pitch, velocity, randchannel+1); // play the new note at that channel
+    polynote[randchannel] = pitch; // save the new pitch of the note against the voice number
+    // no need to turn the voice indicator on
+  }
+
+} // if mode 3
+else // otherwise, just revert to midi thru
+{
+  MIDI.sendNoteOn(pitch, velocity, channel);  
 }
+} // void note on
 
 
-void MyHandleNoteOff(byte channel, byte pitch, byte velocity) { 
-MIDI.sendNoteOff(pitch, velocity, channel);
+void MyHandleNoteOff(byte channel, byte pitch, byte velocity) {
+// note: channel here is useless, as it's getting the channel from the keyboard 
+
+if (mode == 3) // if we're in poly mode
+{    
+
+  if (noteson!=0) noteson--; // take one from the notes being played but don't let it go negative
+
+  for (int i = 0; i <= 5; i++) // we know the note but not the channel
+  {
+    if (pitch==polynote[i]) // if the pitch matches the note that was triggered off...
+    {
+      polyon[i]=0; // turn voice off
+      MIDI.sendNoteOff(pitch, velocity, i+1); // turn that voice off against it's channel
+      polynote[i] = 0; // clear the pitch on that channel
+      break;  
+    }
+  } 
+
+} // if mode 3
+else // otherwise, just revert to midi thru
+{
+  MIDI.sendNoteOff(pitch, velocity, channel);  
 }
+} // void note off
