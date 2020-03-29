@@ -1,3 +1,5 @@
+//Genajam v0.2 - Front end controller for Littlescale's GENMDM
+
 #include <MIDI.h>  // Midi Library
 #include <SPI.h>
 #include "SdFat.h"
