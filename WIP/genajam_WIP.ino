@@ -1,4 +1,4 @@
-// GENajam v0.2
+// GENajam v0.2 - JAMATAR 2020
 // --------------------
 // This is a front end for Litte-scale's GENMDM module for Mega Drive
 
