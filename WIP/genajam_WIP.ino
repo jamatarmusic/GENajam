@@ -78,7 +78,7 @@ const uint8_t MaxNumberOfChars = 17; // only show 16 characters coz LCD
 uint16_t n = 0;
 
 // How many files to handle
-const uint16_t nMax = 32;
+const uint16_t nMax = 31;
 
 // Position of file's directory entry.
 uint16_t dirIndex[nMax];
@@ -118,9 +118,7 @@ uint8_t potPin2 = A2;
 uint8_t potPin3 = A3;
 uint8_t potPin4 = A4;
 
-uint16_t currentpotvalue;
-uint16_t prevpotvalue[4];
-uint8_t cc;
+uint8_t prevpotvalue[4]; // recorded last potentiometer values
 
 void setup()
 {
@@ -130,6 +128,12 @@ void setup()
     pinMode(potPin2, INPUT);
     pinMode(potPin3, INPUT);
     pinMode(potPin4, INPUT);
+
+    //find out where the pots are
+    prevpotvalue[0] = analogRead(potPin1)>>3;
+    prevpotvalue[1] = analogRead(potPin2)>>3;
+    prevpotvalue[2] = analogRead(potPin3)>>3;
+    prevpotvalue[3] = analogRead(potPin4)>>3;
     
     lcd.begin(16, 2);
 
@@ -526,6 +530,13 @@ void modechange() // when the mode button is changed, cycle the modes
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("MONO FM Edit");
+      // find out where the pots are
+      prevpotvalue[0] = analogRead(potPin1)>>3;
+      prevpotvalue[1] = analogRead(potPin2)>>3;
+      prevpotvalue[2] = analogRead(potPin3)>>3;
+      prevpotvalue[3] = analogRead(potPin4)>>3;
+
+      
       refreshscreen=1;
       break;
     }
@@ -546,6 +557,11 @@ void modechange() // when the mode button is changed, cycle the modes
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("POLY FM Edit");
+      // find out where the pots are
+      prevpotvalue[0] = analogRead(potPin1)>>3;
+      prevpotvalue[1] = analogRead(potPin2)>>3;
+      prevpotvalue[2] = analogRead(potPin3)>>3;
+      prevpotvalue[3] = analogRead(potPin4)>>3;
       refreshscreen=1;
       break;
     }
@@ -945,39 +961,54 @@ void fmparamdisplay()
 
 void operatorparamdisplay()
 {
-      
-      int difference;
 
-      difference = prevpotvalue[0]-currentpotvalue;
+  MIDI.read();
+  
+  uint8_t currentpotvalue[4];
+  char difference;
+  bool flash = 0;
+  
+  // read the current pot values
+  currentpotvalue[0] = analogRead(potPin1)>>3;
+  currentpotvalue[1] = analogRead(potPin2)>>3;
+  currentpotvalue[2] = analogRead(potPin3)>>3;
+  currentpotvalue[3] = analogRead(potPin4)>>3;
+  
+  for (int i = 0; i <= 3; i++) {
+    
+    difference = prevpotvalue[i]-currentpotvalue[i];
+    
+    if (difference > 1 || difference < -1)
+    {
+      MIDI.read();
+      lcd.setCursor(((i+1)*4)-3,1);
+      if (currentpotvalue[i]<100) lcd.print("0");
+      if (currentpotvalue[i]<10) lcd.print("0");
+      lcd.print(currentpotvalue[i]);
+      prevpotvalue[i] = currentpotvalue[i];
+
       
-      lcd.setCursor(1,1);
-      currentpotvalue = analogRead(potPin1);
-      cc = currentpotvalue>>3;
-      if (cc<100) lcd.print("0");
-      if (cc<10) lcd.print("0");
-      lcd.print(cc);
-      lcd.print(" ");
+      //for testing
+      if (flash==0)
+      {
+        lcd.setCursor(0,1);
+        lcd.print("*");
+        flash=1;
+      }
+      if (flash==1)
+      {
+        lcd.setCursor(0,1);
+        lcd.print(" ");
+        flash=0;
+      }
       
-      currentpotvalue = analogRead(potPin2);
-      cc = currentpotvalue>>3;
-      if (cc<100) lcd.print("0");
-      if (cc<10) lcd.print("0");
-      lcd.print(cc);
-      lcd.print(" ");
-      
-      currentpotvalue = analogRead(potPin3);
-      cc = currentpotvalue>>3;
-      if (cc<100) lcd.print("0");
-      if (cc<10) lcd.print("0");
-      lcd.print(cc);
-      lcd.print(" ");
-      
-      currentpotvalue = analogRead(potPin4);
-      cc = currentpotvalue>>3;
-      if (cc<100) lcd.print("0");
-      if (cc<10) lcd.print("0");
-      lcd.print(cc);
-      lcd.print(" ");
+    }
+    else
+    {
+      lcd.setCursor(((i+1)*4)-3,1); 
+    }
+  } // for loop
+
 }
 
 void MyHandleNoteOn(byte channel, byte pitch, byte velocity) {
@@ -1007,16 +1038,16 @@ if (mode == 3) // if we're in poly mode
   }
   else // time to note steal if there are more than 6 notes playing
   {  
-    int randchannel = random(5); // fuck if for now we're doing random off polyphony
-    int highestnote = 0; // use the highest note instead
-    int highestchannel = 0;
+    uint8_t randchannel = random(5); // fuck if for now we're doing random off polyphony
+    uint8_t highestnote = 0; // use the highest note instead
+    uint8_t highestchannel = 0;
     for (int i = 0; i <= 5; i++) // but first check for off notes
     {
       if (lowestnote<polynote[i]) lowestnote=polynote[i];
       if (polynote[i]>highestnote) { highestnote=polynote[i]; highestchannel=i; }
       if (polyon[i]==0) randchannel=i;
     }
-    int randnote = polynote[randchannel];
+    uint8_t randnote = polynote[randchannel];
     if (randnote<lowestnote) // if the random note chosen was the lowest note
     {
       randchannel = highestchannel;
