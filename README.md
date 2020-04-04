@@ -7,9 +7,7 @@ This open source program is written for the Arduino Leonardo or MEGA 2560 rev 3.
 
 Currently uses the LCD Keypad Shield by DFRobot, a standard mini SD card reader and Fourty Seven Effects midi input and output. It will has 4 potentiometers to control your 4 operators.
 
-SD card CS pin goes to pin 3. Other pins as standard here:
-
-https://create.arduino.cc/projecthub/electropeak/sd-card-module-with-arduino-how-to-read-write-data-37f390
+SD card CS pin goes to pin 3. Other pins go to the ISCP header (the six pins) as shown in the schematic diagram.
 
 Use this guide for the midi inputs and outputs:
 
