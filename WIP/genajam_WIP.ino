@@ -89,10 +89,10 @@ uint16_t dirIndex[nMax];
 MIDI_CREATE_DEFAULT_INSTANCE();
 
 // start position of each channel file cursor
-int tfifilenumber[6] = {0, 0, 0, 0, 0, 0};
+uint8_t tfifilenumber[6] = {0, 0, 0, 0, 0, 0};
 
 //set the initial midi channel
-int tfichannel=1;
+uint8_t tfichannel=1;
 
 // switch between settings
 uint8_t mode=1;
@@ -146,7 +146,9 @@ void setup()
     lcd.setCursor(0,0);
     lcd.print("JamaGEN START!");
     lcd.setCursor(0,1);
-    lcd.print("version 0.1");
+    lcd.print("version 0.2");
+
+    delay(500);
   
   
   // Serial.begin(9600); // open the serial port at 9600 bps for debug
@@ -156,9 +158,9 @@ void setup()
     if (!sd.begin(SD_CS_PIN, SD_SCK_MHZ(50))) {
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("ERROR:");
+      lcd.print(F("ERROR:"));
       lcd.setCursor(0,1);
-      lcd.print("CANNOT FIND SD");
+      lcd.print(F("CANNOT FIND SD"));
       sd.initErrorHalt();
     }
 
@@ -173,10 +175,10 @@ void setup()
  // List files in root directory and get max file number
   if (!dirFile.open("/", O_RDONLY)) {
       lcd.setCursor(0,0);
-      lcd.print("ERROR:");
+      lcd.print(F("ERROR:"));
       lcd.setCursor(0,1);
-      lcd.print("NO ROOT DIR");
-      sd.errorHalt("open root failed");
+      lcd.print(F("NO ROOT DIR"));
+      sd.errorHalt(F("open root failed"));
   }
   while (n < nMax && tfifile.openNext(&dirFile, O_RDONLY)) {
 
@@ -519,7 +521,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("MONO Preset");
+      lcd.print(F("MONO Preset"));
       refreshscreen=1;
       break;
     }
@@ -529,7 +531,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("MONO FM Edit");
+      lcd.print(F("MONO FM Edit"));
       // find out where the pots are
       prevpotvalue[0] = analogRead(potPin1)>>3;
       prevpotvalue[1] = analogRead(potPin2)>>3;
@@ -546,7 +548,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("POLY Preset");
+      lcd.print(F("POLY Preset"));
       refreshscreen=1;
       break;
     }
@@ -556,7 +558,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("POLY FM Edit");
+      lcd.print(F("POLY FM Edit"));
       // find out where the pots are
       prevpotvalue[0] = analogRead(potPin1)>>3;
       prevpotvalue[1] = analogRead(potPin2)>>3;
@@ -605,9 +607,9 @@ void tfiselect() //load a tfi , send the midi, update screen
     if (!tfifile.open(&dirFile, dirIndex[tfifilenumber[tfichannel-1]], O_RDONLY)) {
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("ERROR:");
+      lcd.print(F("ERROR:"));
       lcd.setCursor(0,1);
-      lcd.print("CANNOT READ TFI ");
+      lcd.print(F("CANNOT READ TFI "));
       sd.errorHalt(F("open"));
     }
 
@@ -635,20 +637,20 @@ void tfiselect() //load a tfi , send the midi, update screen
     lcd.setCursor(0,0);
     if (mode==3) {  
       lcd.write(byte(2));
-      lcd.print(" ");     
+      lcd.print(F(" "));     
     }
     else {
       lcd.write(byte(0));
       lcd.print(tfichannel);  
     }
-    lcd.print(" ");
+    lcd.print(F(" "));
     lcd.write(byte(1));
-    if ((tfifilenumber[tfichannel-1]+1)<100) lcd.print("0");
-    if ((tfifilenumber[tfichannel-1]+1)<10) lcd.print("0");
+    if ((tfifilenumber[tfichannel-1]+1)<100) lcd.print(F("0"));
+    if ((tfifilenumber[tfichannel-1]+1)<10) lcd.print(F("0"));
     lcd.print(tfifilenumber[tfichannel-1]+1);
-    lcd.print("/");
-    if (n<100) lcd.print("0");
-    if (n<10) lcd.print("0");
+    lcd.print(F("/"));
+    if (n<100) lcd.print(F("0"));
+    if (n<10) lcd.print(F("0"));
     lcd.print(n);
     lcd.setCursor(0,1);
     lcd.print(tfifilename);
@@ -665,10 +667,10 @@ void channelselect() //select a new channel, display current tfi on screen
 {
     if (!tfifile.open(&dirFile, dirIndex[tfifilenumber[tfichannel-1]], O_RDONLY)) {
       lcd.setCursor(0,0);
-      lcd.print("ERROR:");
+      lcd.print(F("ERROR:"));
       lcd.setCursor(0,1);
-      lcd.print("CANNOT READ TFI");
-    sd.errorHalt(F("open"));
+      lcd.print(F("CANNOT READ TFI"));
+      sd.errorHalt(F("open"));
   }
 
      //get filename
@@ -681,20 +683,20 @@ void channelselect() //select a new channel, display current tfi on screen
     lcd.setCursor(0,0);
     if (mode==3) {  
       lcd.write(byte(2));
-      lcd.print(" ");     
+      lcd.print(F(" "));     
     }
     else {
       lcd.write(byte(0));
       lcd.print(tfichannel);  
     }
-    lcd.print(" ");
+    lcd.print(F(" "));
     lcd.write(byte(1));
-    if ((tfifilenumber[tfichannel-1]+1)<100) lcd.print("0");
-    if ((tfifilenumber[tfichannel-1]+1)<10) lcd.print("0");
+    if ((tfifilenumber[tfichannel-1]+1)<100) lcd.print(F("0"));
+    if ((tfifilenumber[tfichannel-1]+1)<10) lcd.print(F("0"));
     lcd.print(tfifilenumber[tfichannel-1]+1);
-    lcd.print("/");
-    if (n<100) lcd.print("0");
-    if (n<10) lcd.print("0");
+    lcd.print(F("/"));
+    if (n<100) lcd.print(F("0"));
+    if (n<10) lcd.print(F("0"));
     lcd.print(n);
     lcd.setCursor(0,1);
     lcd.print(tfifilename);
@@ -708,47 +710,47 @@ void channelselect() //select a new channel, display current tfi on screen
 void tfisend(int opnarray[42], int sendchannel)
 {
   
-      //send all TFI data to appropriate CCs
+    //send all TFI data to appropriate CCs
       
     MIDI.sendControlChange(14,opnarray[0]*16,sendchannel); //Algorithm 
     MIDI.sendControlChange(15,opnarray[1]*16,sendchannel); //Feedback
-    
-    MIDI.sendControlChange(20,opnarray[2]*8,sendchannel); //OP1 Multiplier
+
+    MIDI.sendControlChange(20,opnarray[2]*8,sendchannel);  //OP1 Multiplier
     MIDI.sendControlChange(21,opnarray[12]*8,sendchannel); //OP2 Multiplier
     MIDI.sendControlChange(22,opnarray[22]*8,sendchannel); //OP3 Multiplier
     MIDI.sendControlChange(23,opnarray[32]*8,sendchannel); //OP4 Multiplier
 
-    MIDI.sendControlChange(24,opnarray[3]*32,sendchannel); //OP1 Detune
+    MIDI.sendControlChange(24,opnarray[3]*32,sendchannel);  //OP1 Detune
     MIDI.sendControlChange(25,opnarray[13]*32,sendchannel); //OP2 Detune
     MIDI.sendControlChange(26,opnarray[23]*32,sendchannel); //OP3 Detune
     MIDI.sendControlChange(27,opnarray[33]*32,sendchannel); //OP4 Detune
 
-    MIDI.sendControlChange(16,127-opnarray[4],sendchannel); //OP1 Total Level
+    MIDI.sendControlChange(16,127-opnarray[4],sendchannel);  //OP1 Total Level
     MIDI.sendControlChange(17,127-opnarray[14],sendchannel); //OP2 Total Level
     MIDI.sendControlChange(18,127-opnarray[24],sendchannel); //OP3 Total Level
     MIDI.sendControlChange(19,127-opnarray[34],sendchannel); //OP4 Total Level
 
-    MIDI.sendControlChange(39,opnarray[5]*32,sendchannel); //OP1 Rate Scaling
+    MIDI.sendControlChange(39,opnarray[5]*32,sendchannel);  //OP1 Rate Scaling
     MIDI.sendControlChange(40,opnarray[15]*32,sendchannel); //OP2 Rate Scaling
     MIDI.sendControlChange(41,opnarray[25]*32,sendchannel); //OP3 Rate Scaling
     MIDI.sendControlChange(42,opnarray[35]*32,sendchannel); //OP4 Rate Scaling
 
-    MIDI.sendControlChange(43,opnarray[6]*4,sendchannel); //OP1 Attack Rate
+    MIDI.sendControlChange(43,opnarray[6]*4,sendchannel);  //OP1 Attack Rate
     MIDI.sendControlChange(44,opnarray[16]*4,sendchannel); //OP2 Attack Rate
     MIDI.sendControlChange(45,opnarray[26]*4,sendchannel); //OP3 Attack Rate
     MIDI.sendControlChange(46,opnarray[36]*4,sendchannel); //OP4 Attack Rate
 
-    MIDI.sendControlChange(47,opnarray[7]*4,sendchannel); //OP1 1st Decay Rate
+    MIDI.sendControlChange(47,opnarray[7]*4,sendchannel);  //OP1 1st Decay Rate
     MIDI.sendControlChange(48,opnarray[17]*4,sendchannel); //OP2 1st Decay Rate
     MIDI.sendControlChange(49,opnarray[27]*4,sendchannel); //OP3 1st Decay Rate
     MIDI.sendControlChange(50,opnarray[37]*4,sendchannel); //OP4 1st Decay Rate
 
-    MIDI.sendControlChange(51,opnarray[8]*8,sendchannel); //OP1 2nd Decay Rate
+    MIDI.sendControlChange(51,opnarray[8]*8,sendchannel);  //OP1 2nd Decay Rate
     MIDI.sendControlChange(52,opnarray[18]*8,sendchannel); //OP2 2nd Decay Rate
     MIDI.sendControlChange(53,opnarray[28]*8,sendchannel); //OP3 2nd Decay Rate
     MIDI.sendControlChange(54,opnarray[38]*8,sendchannel); //OP4 2nd Decay Rate
 
-    MIDI.sendControlChange(59,opnarray[9]*8,sendchannel); //OP1 Release Rate
+    MIDI.sendControlChange(59,opnarray[9]*8,sendchannel);  //OP1 Release Rate
     MIDI.sendControlChange(60,opnarray[19]*8,sendchannel); //OP2 Release Rate
     MIDI.sendControlChange(61,opnarray[29]*8,sendchannel); //OP3 Release Rate
     MIDI.sendControlChange(62,opnarray[39]*8,sendchannel); //OP4 Release Rate
@@ -774,19 +776,70 @@ void tfisend(int opnarray[42], int sendchannel)
 
     // Dump TFI settings into the global settings array
     
-    for (int i = 0; i <= 41; i++) {
-    fmsettings[sendchannel][i] = opnarray[i];
-    }
-    fmsettings[sendchannel][42] = 0; //FM Level
-    fmsettings[sendchannel][43] = 0; //AM Level
-    fmsettings[sendchannel][44] = 127; //Stereo (centered)
-    fmsettings[sendchannel][45] = 0; //OP1 Amplitude Modulation
-    fmsettings[sendchannel][46] = 0; //OP2 Amplitude Modulation
-    fmsettings[sendchannel][47] = 0; //OP3 Amplitude Modulation
-    fmsettings[sendchannel][48] = 0; //OP4 Amplitude Modulation
-    fmsettings[sendchannel][49] = 0; //Patch is uneditted
+    fmsettings[tfichannel-1][0] = opnarray[0]*16; //Algorithm 
+    fmsettings[tfichannel-1][1] = opnarray[1]*16; //Feedback
 
+    fmsettings[tfichannel-1][2] = opnarray[2]*8;   //OP1 Multiplier
+    fmsettings[tfichannel-1][12] = opnarray[12]*8; //OP2 Multiplier
+    fmsettings[tfichannel-1][22] = opnarray[22]*8; //OP3 Multiplier
+    fmsettings[tfichannel-1][32] = opnarray[32]*8; //OP4 Multiplier
+
+    fmsettings[tfichannel-1][3] = opnarray[3]*32;   //OP1 Detune
+    fmsettings[tfichannel-1][13] = opnarray[13]*32; //OP2 Detune
+    fmsettings[tfichannel-1][23] = opnarray[23]*32; //OP3 Detune
+    fmsettings[tfichannel-1][33] = opnarray[33]*32; //OP4 Detune
+
+    fmsettings[tfichannel-1][4] = 127-opnarray[4];   //OP1 Total Level
+    fmsettings[tfichannel-1][14] = 127-opnarray[14]; //OP2 Total Level
+    fmsettings[tfichannel-1][24] = 127-opnarray[24]; //OP3 Total Level
+    fmsettings[tfichannel-1][34] = 127-opnarray[34]; //OP4 Total Level
+
+    fmsettings[tfichannel-1][5] = opnarray[5]*32;   //OP1 Rate Scaling
+    fmsettings[tfichannel-1][15] = opnarray[15]*32; //OP2 Rate Scaling
+    fmsettings[tfichannel-1][25] = opnarray[25]*32; //OP3 Rate Scaling
+    fmsettings[tfichannel-1][35] = opnarray[35]*32; //OP4 Rate Scaling
+
+    fmsettings[tfichannel-1][6] = opnarray[6]*4;   //OP1 Attack Rate
+    fmsettings[tfichannel-1][16] = opnarray[16]*4; //OP2 Attack Rate
+    fmsettings[tfichannel-1][26] = opnarray[26]*4; //OP3 Attack Rate
+    fmsettings[tfichannel-1][36] = opnarray[36]*4; //OP4 Attack Rate
+
+    fmsettings[tfichannel-1][7] = opnarray[7]*4;   //OP1 1st Decay Rate
+    fmsettings[tfichannel-1][17] = opnarray[17]*4; //OP2 1st Decay Rate
+    fmsettings[tfichannel-1][27] = opnarray[27]*4; //OP3 1st Decay Rate
+    fmsettings[tfichannel-1][37] = opnarray[37]*4; //OP4 1st Decay Rate
+
+    fmsettings[tfichannel-1][8] = opnarray[8]*8;   //OP1 2nd Decay Rate
+    fmsettings[tfichannel-1][18] = opnarray[18]*8; //OP2 2nd Decay Rate
+    fmsettings[tfichannel-1][28] = opnarray[28]*8; //OP3 2nd Decay Rate
+    fmsettings[tfichannel-1][38] = opnarray[38]*8; //OP4 2nd Decay Rate
+
+    fmsettings[tfichannel-1][9] = opnarray[9]*8;   //OP1 Release Rate
+    fmsettings[tfichannel-1][19] = opnarray[19]*8; //OP2 Release Rate
+    fmsettings[tfichannel-1][29] = opnarray[29]*8; //OP3 Release Rate
+    fmsettings[tfichannel-1][39] = opnarray[39]*8; //OP4 Release Rate
+
+    fmsettings[tfichannel-1][10] = opnarray[10]*8; //OP1 2nd Total Level
+    fmsettings[tfichannel-1][20] = opnarray[20]*8; //OP2 2nd Total Level
+    fmsettings[tfichannel-1][30] = opnarray[30]*8; //OP3 2nd Total Level
+    fmsettings[tfichannel-1][40] = opnarray[40]*8; //OP4 2nd Total Level
+
+    fmsettings[tfichannel-1][11] = opnarray[11]*8; //OP1 SSG-EG
+    fmsettings[tfichannel-1][21] = opnarray[21]*8; //OP2 SSG-EG
+    fmsettings[tfichannel-1][31] = opnarray[31]*8; //OP3 SSG-EG
+    fmsettings[tfichannel-1][41] = opnarray[41]*8; //OP4 SSG-EG
+    
+    fmsettings[tfichannel-1][42] = 0; //FM Level
+    fmsettings[tfichannel-1][43] = 0; //AM Level
+    fmsettings[tfichannel-1][44] = 127; //Stereo (centered)
+    fmsettings[tfichannel-1][45] = 0; //OP1 Amplitude Modulation
+    fmsettings[tfichannel-1][46] = 0; //OP2 Amplitude Modulation
+    fmsettings[tfichannel-1][47] = 0; //OP3 Amplitude Modulation
+    fmsettings[tfichannel-1][48] = 0; //OP4 Amplitude Modulation
+    fmsettings[tfichannel-1][49] = 0; //Patch is uneditted
+    
     /*
+    // FOR TESTING CHANNEL
     MIDI.sendNoteOn(60, 127, sendchannel);
     delay(200);           
     MIDI.sendNoteOff(60, 0, sendchannel);  
@@ -797,6 +850,8 @@ void tfisend(int opnarray[42], int sendchannel)
 void fmparamdisplay()
 {
 
+  uint8_t i; // for holding array number
+  
   switch(fmscreen) {
 
     // Algorthm, Feedback, Pan
@@ -806,8 +861,23 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("01:Alg FB Pan");
+      lcd.print(F(" "));
+      lcd.print(F("01:Alg FB Pan"));
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][0];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][1];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][44];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -818,8 +888,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("02:TL");
+      lcd.print(F(" "));
+      lcd.print(F("02:TL"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][4];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][14];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][24];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][34];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -830,8 +920,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("03:Multiple");
+      lcd.print(F(" "));
+      lcd.print(F("03:Multiple"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][2];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][12];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][22];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][32];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -842,8 +952,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("04:Rate Scale");
+      lcd.print(F(" "));
+      lcd.print(F("04:Rate Scale"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][5];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][15];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][25];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][35];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -854,8 +984,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("05:Detune");
+      lcd.print(F(" "));
+      lcd.print(F("05:Detune"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][3];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][13];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][23];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][33];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -866,8 +1016,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("06:Attack");
+      lcd.print(F(" "));
+      lcd.print(F("06:Attack"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][6];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][16];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][26];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][36];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -878,8 +1048,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("07:Decay 1");
+      lcd.print(F(" "));
+      lcd.print(F("07:Decay 1"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][7];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][17];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][27];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][37];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -890,8 +1080,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("08:Decay 2");
+      lcd.print(F(" "));
+      lcd.print(F("08:Decay 2"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][8];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][18];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][28];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][38];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -902,8 +1112,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("09:TL 2");
+      lcd.print(F(" "));
+      lcd.print(F("09:TL 2"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][10];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][20];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][30];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][40];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -914,8 +1144,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("10:Release");
+      lcd.print(F(" "));
+      lcd.print(F("10:Release"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][9];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][19];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][29];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][39];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -926,8 +1176,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("11:SSG-EG");
+      lcd.print(F(" "));
+      lcd.print(F("11:SSG-EG"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][11];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][21];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][31];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][41];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -938,8 +1208,28 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("12:Amp Mod");
+      lcd.print(F(" "));
+      lcd.print(F("12:Amp Mod"));
+      lcd.setCursor(1,1);
+      i = fmsettings[tfichannel-1][45];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(5,1);
+      i = fmsettings[tfichannel-1][46];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][47];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][48];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }
 
@@ -950,8 +1240,18 @@ void fmparamdisplay()
       lcd.setCursor(0,0);
       lcd.write(byte(0));
       lcd.print(tfichannel);
-      lcd.print(" ");
-      lcd.print("13:AM FM Lvl");
+      lcd.print(F(" "));
+      lcd.print(F("13:AM FM Lvl"));
+      lcd.setCursor(9,1);
+      i = fmsettings[tfichannel-1][42];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
+      lcd.setCursor(13,1);
+      i = fmsettings[tfichannel-1][43];
+      if (i<100) lcd.print(F(" "));
+      if (i<10) lcd.print(F(" "));
+      lcd.print(i);
       break;
     }   
      
@@ -978,36 +1278,167 @@ void operatorparamdisplay()
     
     difference = prevpotvalue[i]-currentpotvalue[i];
     
+    // only update the pots and values if the value has changed more than 'difference'
     if (difference > 1 || difference < -1)
     {
       MIDI.read();
       lcd.setCursor(((i+1)*4)-3,1);
-      if (currentpotvalue[i]<100) lcd.print("0");
-      if (currentpotvalue[i]<10) lcd.print("0");
+      if (currentpotvalue[i]<100) lcd.print(F(" "));
+      if (currentpotvalue[i]<10) lcd.print(F(" "));
+      if (currentpotvalue[i]==1) currentpotvalue[i]=0; // flatten that shiz
+      if (currentpotvalue[i]==126) currentpotvalue[i]=127; // flatten that shiz
       lcd.print(currentpotvalue[i]);
       prevpotvalue[i] = currentpotvalue[i];
-
-      
-      //for testing
-      if (flash==0)
-      {
-        lcd.setCursor(0,1);
-        lcd.print("*");
-        flash=1;
-      }
-      if (flash==1)
-      {
-        lcd.setCursor(0,1);
-        lcd.print(" ");
-        flash=0;
-      }
-      
+      fmccsend(i, currentpotvalue[i]);
     }
     else
     {
       lcd.setCursor(((i+1)*4)-3,1); 
     }
+
   } // for loop
+
+}
+
+void fmccsend(byte potnumber, uint8_t potvalue)
+{
+    
+    // grab the value from the pot that changes, update
+    
+    switch(fmscreen) {
+      
+    // Algorthm, Feedback, Pan
+    case 1:
+    {
+      lcd.setCursor(1,1);
+      lcd.print(F("   ")); // just blank out the unused pot display
+      if (potnumber==1) fmsettings[tfichannel-1][0] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][1] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][44] = potvalue;
+      break;
+    }
+
+    // Total Level
+    case 2:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][4] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][14] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][24] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][34] = potvalue;
+      break;
+    }
+
+    // Multiple
+    case 3:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][2] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][12] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][22] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][32] = potvalue;
+      break;
+    }
+
+    // Rate Scaling
+    case 4:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][5] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][15] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][25] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][35] = potvalue;
+      break;
+    }
+
+    // Detune
+    case 5:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][3] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][13] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][23] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][33] = potvalue;
+      break;
+    }
+
+    // Attack Rate
+    case 6:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][6] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][16] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][26] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][36] = potvalue;
+      break;
+    }
+
+    // Decay Rate 1
+    case 7:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][7] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][17] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][27] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][37] = potvalue;
+      break;
+    }
+
+    // Decay Rate 2
+    case 8:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][8] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][18] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][28] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][38] = potvalue;
+      break;
+    }
+
+    // Total Level 2
+    case 9:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][10] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][20] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][30] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][40] = potvalue;
+      break;
+    }
+
+    // Release Rate
+    case 10:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][9] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][19] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][29] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][39] = potvalue;
+      break;
+    }
+
+    // SSG-EG
+    case 11:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][11] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][21] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][31] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][41] = potvalue;
+      break;
+    }
+
+    // Amp Mod
+    case 12:
+    {
+      if (potnumber==0) fmsettings[tfichannel-1][45] = potvalue;
+      if (potnumber==1) fmsettings[tfichannel-1][46] = potvalue;
+      if (potnumber==2) fmsettings[tfichannel-1][47] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][48] = potvalue;
+      break;
+    }
+
+    // AM and FM Level
+    case 13:
+    {
+      lcd.setCursor(1,1);
+      lcd.print(F("       ")); // just blank out the unused pot display
+      if (potnumber==2) fmsettings[tfichannel-1][42] = potvalue;
+      if (potnumber==3) fmsettings[tfichannel-1][43] = potvalue;
+      break;
+    }   
+     
+  } // end switch  
 
 }
 
