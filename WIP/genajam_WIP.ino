@@ -1,7 +1,8 @@
-// GENajam v0.2 - JAMATAR 2020
+// GENajam v0.3 - JAMATAR 2020
 // --------------------
 // This is a front end for Litte-scale's GENMDM module for Mega Drive
-// Currently for: Arduino MEGA 2640
+// Currently for: Arduino MEGA 2640 or Leonardo
+// SD card hooks up via the ICSP header pins
 
 #include <MIDI.h>  // Midi Library
 #include <SPI.h>
