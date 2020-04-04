@@ -430,26 +430,6 @@ MIDI.read();
       break;
       }
       
-      case btnUP:
-      {
-      tfichannel=tfichannel+1;
-      if(tfichannel==(7)){ // if max channels reached, loop around
-      tfichannel=1;
-      }
-      fmparamdisplay();
-      break;
-      }
-      
-      case btnDOWN:
-      {
-      tfichannel=tfichannel-1;
-      if(tfichannel==(0)){ // if max channels reached, loop around
-      tfichannel=6;
-      }
-      fmparamdisplay();
-      break;
-      }
-      
       case btnSELECT:
       {
       modechange();
@@ -514,7 +494,7 @@ int read_LCD_buttons() // function for reading the buttons
 void modechange() // when the mode button is changed, cycle the modes
 {
   mode++;
-  if(mode > 3) mode = 1; // loop mode
+  if(mode > 4) mode = 1; // loop mode
 
   switch(mode){
     case 1:
@@ -522,7 +502,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print(F("MONO Preset"));
+      lcd.print(F("MONO | Preset"));
       refreshscreen=1;
       break;
     }
@@ -532,7 +512,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print(F("MONO FM Edit"));
+      lcd.print(F("MONO | FM Edit"));
       // find out where the pots are
       prevpotvalue[0] = analogRead(potPin1)>>3;
       prevpotvalue[1] = analogRead(potPin2)>>3;
@@ -549,7 +529,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print(F("POLY Preset"));
+      lcd.print(F("POLY | Preset"));
       refreshscreen=1;
       break;
     }
@@ -559,7 +539,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print(F("POLY FM Edit"));
+      lcd.print(F("POLY | FM Edit"));
       // find out where the pots are
       prevpotvalue[0] = analogRead(potPin1)>>3;
       prevpotvalue[1] = analogRead(potPin2)>>3;
@@ -595,6 +575,13 @@ if ((millis() - messagestart) > messagedelay && refreshscreen == 1) {
     case 3:
     {
       channelselect(); // just reload the channel info for the current channel
+      refreshscreen=0;
+      break;
+    }
+    
+    case 4:
+    {
+      fmparamdisplay();
       refreshscreen=0;
       break;
     }      
@@ -852,17 +839,26 @@ void fmparamdisplay()
 {
 
   uint8_t i; // for holding array number
+
+  lcd.clear();
+  lcd.setCursor(0,0);
+
+  if (mode==2) {
+    lcd.write(byte(0));
+    lcd.print(tfichannel);
+    lcd.print(F(" ")); 
+  }
+  else
+  {
+    lcd.write(byte(2));
+    lcd.print(F("  "));    
+  }
   
   switch(fmscreen) {
 
     // Algorthm, Feedback, Pan
     case 1:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("01:Alg FB Pan"));
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][0];
@@ -885,11 +881,6 @@ void fmparamdisplay()
     // Total Level
     case 2:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("02:TL"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][4];
@@ -917,11 +908,6 @@ void fmparamdisplay()
     // Multiple
     case 3:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("03:Multiple"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][2];
@@ -949,11 +935,6 @@ void fmparamdisplay()
     // Rate Scaling
     case 4:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("04:Rate Scale"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][5];
@@ -981,11 +962,6 @@ void fmparamdisplay()
     // Detune
     case 5:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("05:Detune"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][3];
@@ -1013,11 +989,6 @@ void fmparamdisplay()
     // Attack Rate
     case 6:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("06:Attack"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][6];
@@ -1045,11 +1016,6 @@ void fmparamdisplay()
     // Decay Rate 1
     case 7:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("07:Decay 1"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][7];
@@ -1077,11 +1043,6 @@ void fmparamdisplay()
     // Decay Rate 2
     case 8:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("08:Decay 2"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][8];
@@ -1106,15 +1067,10 @@ void fmparamdisplay()
       break;
     }
 
-    // Total Level 2
+    // Release Rate
     case 9:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
-      lcd.print(F("09:TL 2"));
+      lcd.print(F("09:Release"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][10];
       if (i<100) lcd.print(F(" "));
@@ -1138,15 +1094,10 @@ void fmparamdisplay()
       break;
     }
 
-    // Release Rate
+    // Total Level 2
     case 10:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
-      lcd.print(F("10:Release"));
+      lcd.print(F("10:TL 2"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][9];
       if (i<100) lcd.print(F(" "));
@@ -1173,11 +1124,6 @@ void fmparamdisplay()
     // SSG-EG
     case 11:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("11:SSG-EG"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][11];
@@ -1205,11 +1151,6 @@ void fmparamdisplay()
     // Amp Mod
     case 12:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("12:Amp Mod"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][45];
@@ -1237,11 +1178,6 @@ void fmparamdisplay()
     // AM and FM Level
     case 13:
     {
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.write(byte(0));
-      lcd.print(tfichannel);
-      lcd.print(F(" "));
       lcd.print(F("13:FM / AM Lvl"));
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][42];
@@ -1290,7 +1226,21 @@ void operatorparamdisplay()
       if (currentpotvalue[i]==126) currentpotvalue[i]=127; // flatten that shiz
       lcd.print(currentpotvalue[i]);
       prevpotvalue[i] = currentpotvalue[i];
-      fmccsend(i, currentpotvalue[i]);
+
+      // send CC for either mono or poly mode
+      if (mode == 2)
+      {
+        fmccsend(i, currentpotvalue[i]);  
+      }
+      else
+      {
+        for (int c = 1; c <=6; c++) {
+          tfichannel=c;
+          fmccsend(i, currentpotvalue[i]);
+        }
+      }
+      
+      
     }
     else
     {
@@ -1389,7 +1339,7 @@ void fmccsend(byte potnumber, uint8_t potvalue)
       break;
     }
 
-    // Total Level 2
+    // Release Rate
     case 9:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][10] = potvalue; MIDI.sendControlChange(59,potvalue,tfichannel);} //OP1 Release Rate
@@ -1399,7 +1349,7 @@ void fmccsend(byte potnumber, uint8_t potvalue)
       break;
     }
 
-    // Release Rate
+    // Total Level 2
     case 10:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][9] = potvalue; MIDI.sendControlChange(55,potvalue,tfichannel);} //OP1 2nd Total Level
@@ -1449,7 +1399,7 @@ void MyHandleNoteOn(byte channel, byte pitch, byte velocity) {
 velocity = velocity*(1.7);
 if (velocity > 127) velocity = 127;
 
-if (mode == 3) // if we're in poly mode
+if (mode == 3 || mode == 4) // if we're in poly mode
 {  
   
   noteson++; // add one to the notes currently held down
@@ -1493,7 +1443,7 @@ if (mode == 3) // if we're in poly mode
     // no need to turn the voice indicator on
   }
 
-} // if mode 3
+} // if mode 3 or 4
 else // otherwise, just revert to midi thru
 {
   MIDI.sendNoteOn(pitch, velocity, channel);  
@@ -1506,7 +1456,7 @@ void MyHandleNoteOff(byte channel, byte pitch, byte velocity) {
 // in poly mode this doesn't mean anything, since the controller will be playing
 // through one channel and the program is assign channels itself
 
-if (mode == 3) // if we're in poly mode
+if (mode == 3 || mode == 4) // if we're in poly mode
 {    
 
   if (noteson!=0) noteson--; // take one from the notes being played but don't let it go negative
@@ -1522,7 +1472,7 @@ if (mode == 3) // if we're in poly mode
     }
   } 
 
-} // if mode 3
+} // if mode 3 or 4
 else // otherwise, just revert to midi thru
 {
   MIDI.sendNoteOff(pitch, velocity, channel);  
