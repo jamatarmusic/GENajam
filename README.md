@@ -42,8 +42,10 @@ Load the TFI samples under the TFI folder in this GITHUB to the root of an SD ca
 
 ```
 175 MIDI.sendControlChange(83,65,1); // set GENMDM to NTSC
+```
 or
-MIDI.sendControlChange(83,0,1); // set GENMDM to PAL
+```
+175 MIDI.sendControlChange(83,0,1); // set GENMDM to PAL
 ```
 
 ## MONO | Preset Mode
@@ -74,8 +76,8 @@ Build Roadmap:
 1. Read from SD Card
 2. Assign programs to channels
 3. Add screen and navigation 
-4. Add polyphony <===
+4. Add polyphony
 5. Add editor mode
-6. Add pages for all editable elements
+6. Add pages for all editable elements <===
 7. Add save state
 8. Add save new patch
