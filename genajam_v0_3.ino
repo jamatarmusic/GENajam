@@ -80,7 +80,7 @@ const uint8_t MaxNumberOfChars = 17; // only show 16 characters coz LCD
 uint16_t n = 0;
 
 // How many files to handle
-const uint16_t nMax = 31;
+const uint16_t nMax = 64;
 
 // Position of file's directory entry.
 uint16_t dirIndex[nMax];
@@ -148,7 +148,7 @@ void setup()
     lcd.setCursor(0,0);
     lcd.print("JamaGEN START!");
     lcd.setCursor(0,1);
-    lcd.print("version 0.2");
+    lcd.print("version 0.3");
 
     delay(500);
   
