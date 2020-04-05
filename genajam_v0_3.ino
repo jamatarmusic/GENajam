@@ -80,7 +80,7 @@ const uint8_t MaxNumberOfChars = 17; // only show 16 characters coz LCD
 uint16_t n = 0;
 
 // How many files to handle
-const uint16_t nMax = 64;
+const uint16_t nMax = 128;
 
 // Position of file's directory entry.
 uint16_t dirIndex[nMax];
@@ -91,7 +91,7 @@ uint16_t dirIndex[nMax];
 MIDI_CREATE_DEFAULT_INSTANCE();
 
 // start position of each channel file cursor
-uint8_t tfifilenumber[6] = {0, 0, 0, 0, 0, 0};
+char tfifilenumber[6] = {0, 0, 0, 0, 0, 0};
 
 //set the initial midi channel
 uint8_t tfichannel=1;
