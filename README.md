@@ -36,7 +36,7 @@ There is a folder of sample TFI files that you can test by loading them to the r
 
 # Instructions
 
-Load the TFI samples under the TFI folder in this GITHUB to the root of an SD card formatted for Arduino. You can currently load 32 files maximum. The INO file is currently set up for an NTSC tuning mode. To change this to PAL tuning mode, edit line 175:
+Load the TFI samples under the TFI folder in this GITHUB to the root of an SD card formatted for Arduino. You can currently load 64 files maximum. The INO file is currently set up for an NTSC tuning mode. To change this to PAL tuning mode, edit line 175:
 
 ```
 175 MIDI.sendControlChange(83,65,1); // set GENMDM to NTSC
@@ -64,7 +64,7 @@ Once a TFI setting has been chosen, enter this mode to edit the raw FM parameter
 
 # Current state
 
-version 0.3 - Have updated the project to Leonardo for expanded dynamic memory. The program is now fully functional, allowing you to load TFI files to each channel in MONO mode or to all 6 channels at once in POLY mode. You can then go into FM edit mode and start editing the FM patch.
+version 0.3 - Have updated the project to Leonardo and MEGA 2560 for expanded dynamic memory. The program is now fully functional, allowing you to load TFI files to each channel in MONO mode or to all 6 channels at once in POLY mode. You can then go into FM edit mode and start editing the FM patch. Can load 64 TFI files from SD card.
 
 version 0.2 - Can load up to 32 TFI instrument files off the root on an SD card and you can select instruments for channels 1-6 individually. Can switch modes. FM edit mode doesn't work yet. Poly preset mode will load the TFI file to all 6 channels. When in this mode, first enter the mode and then press left or right. This will initialise the loading of the TFI file and overwrite all channels with the TFI on the screen.
 
