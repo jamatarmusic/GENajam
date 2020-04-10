@@ -50,6 +50,7 @@ bool polyon[6] = {0, 0, 0, 0, 0, 0};
 uint8_t noteson = 0;
 uint8_t lowestnote = 0; // don't steal the lowest note
 
+
 void setup()
 {
 // set up the LCD's number of columns and rows:
@@ -76,6 +77,13 @@ void loop()
 {
 
 MIDI.read();
+
+/*
+lcd.setCursor(13,0);
+if (lowestnote<100) lcd.print("0");
+if (lowestnote<10) lcd.print("0");
+lcd.print(lowestnote);
+*/
 
 lcd.setCursor(14,1);
 if (noteson<10) lcd.print("0"); MIDI.read();
@@ -171,10 +179,9 @@ lcd.print(" ");
 
 void MyHandleNoteOn(byte channel, byte pitch, byte velocity) {
 
-/*
 velocity = velocity*2;
 if (velocity > 127) velocity = 127;
-*/
+
 
 lcd.setCursor(13,0);
 if (velocity<100) lcd.print("0");
@@ -185,10 +192,15 @@ if (mode == 3) // if we're in poly mode
 {  
   
   noteson++; // add one to the notes currently held down
+  lowestnote = polynote[0]; // don't steal the lowest note
+  
+  for (int i = 0; i <= 5; i++) // now scan the current note array for the lowest note
+  {
+    if (polynote[i]<lowestnote && polynote[i]!=0) lowestnote=polynote[i];
+  } 
 
   if (noteson < 7) // if less than 7 notes are playing
   {
-    
     for (int i = 0; i <= 5; i++) // voice scan to check for voices that are free
     {
       if (polyon[i]==0) // if the voice isn't on
@@ -203,26 +215,27 @@ if (mode == 3) // if we're in poly mode
   }
   else // time to note steal if there are more than 6 notes playing
   {  
-    int randchannel = random(5); // fuck if for now we're doing random off polyphony
-    int highestnote = 0; // use the highest note instead
-    int highestchannel = 0;
-    for (int i = 0; i <= 5; i++) // but first check for off notes
+    long randchannel = random(0,6); // pick a random channel to switch
+
+    if (polynote[randchannel]==lowestnote) // if in your randomness, you chose the lowest note
     {
-      if (lowestnote<polynote[i]) lowestnote=polynote[i];
-      if (polynote[i]>highestnote) { highestnote=polynote[i]; highestchannel=i; }
-      if (polyon[i]==0) randchannel=i;
+      randchannel++; // next channel
+      if (randchannel==6) randchannel=0; // loop around
     }
-    int randnote = polynote[randchannel];
-    if (randnote<lowestnote) // if the random note chosen was the lowest note
+
+    // if there are notes being held, but they were turned off at some point, scan for empty voice slots
+    for (int i = 0; i <= 5; i++)
     {
-      randchannel = highestchannel;
+      if (polynote[i]==0) {
+      randchannel=i; // fill the empty channel
+      break;
+      }     
     }
-    polyon[randchannel]=1; // turn it on just in case
-    
-    MIDI.sendNoteOff(randnote, velocity, randchannel+1); // turn off that old note
+          
+    MIDI.sendNoteOff(polynote[randchannel], velocity, randchannel+1); // turn off that old note
     MIDI.sendNoteOn(pitch, velocity, randchannel+1); // play the new note at that channel
     polynote[randchannel] = pitch; // save the new pitch of the note against the voice number
-    // no need to turn the voice indicator on
+    polyon[randchannel]=1; // turn it on just in case
   }
 
 } // if mode 3
@@ -258,3 +271,9 @@ else // otherwise, just revert to midi thru
   MIDI.sendNoteOff(pitch, velocity, channel);  
 }
 } // void note off
+
+/*
+void MyHandleCC(byte channel, byte number, byte value) {
+  MIDI.sendControlChange(number, value, channel); 
+}
+*/
