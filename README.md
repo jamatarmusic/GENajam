@@ -66,7 +66,7 @@ Once a TFI setting has been chosen, enter this mode to edit the raw FM parameter
 
 # Current state
 
-version 0.4 - Added sustain pedal support over polyphony. It mostly works, but it's tricky to track notes across the 6 channels, so sometimes funny things happen. Added in a midi function to pass along pitch bends so that works now too.
+version 0.4 - Added sustain pedal support over polyphony. It mostly works, but it's tricky to track notes across the 6 channels, so sometimes funny things happen. Added in a midi function to pass along pitch bends so that works now too. Also thanks to Impbox for writing a really nice bezier curve velocity formula that I can use to fine tune the playablity of the velocity. GenMDM uses a really linear curve that works for programming, but not so much for playing via a keyboard. The velocity curve brings back some of the "feel" of a synth.
 
 version 0.3 - Have updated the project to Leonardo and MEGA 2560 for expanded dynamic memory. The program is now fully functional, allowing you to load TFI files to each channel in MONO mode or to all 6 channels at once in POLY mode. You can then go into FM edit mode and start editing the FM patch. Can load 64 TFI files from SD card.
 
