@@ -152,7 +152,7 @@ void setup()
     lcd.setCursor(0,0);
     lcd.print("JamaGEN START!");
     lcd.setCursor(0,1);
-    lcd.print("version 0.3");
+    lcd.print("version 0.4");
 
     delay(500);
   
