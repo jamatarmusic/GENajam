@@ -1,4 +1,4 @@
-// GENajam v0.3 - JAMATAR 2020
+// GENajam v0.4 - JAMATAR 2020
 // --------------------
 // This is a front end for Litte-scale's GENMDM module for Mega Drive
 // Currently for: Arduino MEGA 2640 or Leonardo
@@ -80,7 +80,7 @@ const uint8_t MaxNumberOfChars = 17; // only show 16 characters coz LCD
 uint16_t n = 0;
 
 // How many files to handle
-const uint16_t nMax = 128;
+const uint16_t nMax = 64;
 
 // Position of file's directory entry.
 uint16_t dirIndex[nMax];
@@ -104,10 +104,14 @@ uint8_t mode=1;
 // 4) poly fm settings
 
 // polyphony settings
-uint8_t polynote[6] = {0, 0, 0, 0, 0, 0};
-bool polyon[6] = {0, 0, 0, 0, 0, 0};
-uint8_t noteson = 0;
+uint8_t polynote[6] = {0, 0, 0, 0, 0, 0}; // what note is in each channel
+bool polyon[6] = {0, 0, 0, 0, 0, 0}; // what channels have voices playing
+bool sustainon[6] = {0, 0, 0, 0, 0, 0}; // what channels are sustained
+bool noteheld[6] = {0, 0, 0, 0, 0, 0}; // what notes are currently held down
+uint8_t noteson = 0; // how many notes are on
+uint8_t sustainextra = 0; // how many notes are added in sustain
 uint8_t lowestnote = 0; // don't steal the lowest note
+bool sustain = 0; // is the pedal on
 
 // fm parameter screen navigation
 uint8_t fmscreen=1;
@@ -170,7 +174,9 @@ void setup()
   MIDI.turnThruOff(); // turn off soft midi thru
 
   MIDI.setHandleNoteOn(MyHandleNoteOn);
-  MIDI.setHandleNoteOff(MyHandleNoteOff); 
+  MIDI.setHandleNoteOff(MyHandleNoteOff);
+  MIDI.setHandleControlChange(MyHandleCC);
+  MIDI.setHandlePitchBend(MyHandlePitchbend);
   
   MIDI.sendControlChange(83,65,1); // set GENMDM to NTSC
 
@@ -214,22 +220,6 @@ void setup()
   tfiselect();
 
   //test tone all channnels
-
-/*
-    MIDI.sendNoteOn(60, 127, 1);
-    MIDI.sendNoteOn(62, 127, 2);
-    MIDI.sendNoteOn(63, 127, 3);
-    MIDI.sendNoteOn(65, 127, 4);
-    MIDI.sendNoteOn(67, 127, 5);
-    MIDI.sendNoteOn(68, 127, 6);
-    delay(1000);
-    MIDI.sendNoteOff(60, 127, 1);
-    MIDI.sendNoteOff(62, 127, 2);
-    MIDI.sendNoteOff(63, 127, 3);
-    MIDI.sendNoteOff(65, 127, 4);
-    MIDI.sendNoteOff(67, 127, 5);
-    MIDI.sendNoteOff(68, 127, 6); 
- */   
   
 } // void setup
 
@@ -503,7 +493,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print(F("MONO | Preset"));
+      lcd.print("MONO | Preset");
       refreshscreen=1;
       break;
     }
@@ -513,7 +503,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print(F("MONO | FM Edit"));
+      lcd.print("MONO | FM Edit");
       // find out where the pots are
       prevpotvalue[0] = analogRead(potPin1)>>3;
       prevpotvalue[1] = analogRead(potPin2)>>3;
@@ -530,7 +520,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print(F("POLY | Preset"));
+      lcd.print("POLY | Preset");
       refreshscreen=1;
       break;
     }
@@ -540,7 +530,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print(F("POLY | FM Edit"));
+      lcd.print("POLY | FM Edit");
       // find out where the pots are
       prevpotvalue[0] = analogRead(potPin1)>>3;
       prevpotvalue[1] = analogRead(potPin2)>>3;
@@ -596,9 +586,9 @@ void tfiselect() //load a tfi , send the midi, update screen
     if (!tfifile.open(&dirFile, dirIndex[tfifilenumber[tfichannel-1]], O_RDONLY)) {
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print(F("ERROR:"));
+      lcd.print("ERROR:");
       lcd.setCursor(0,1);
-      lcd.print(F("CANNOT READ TFI "));
+      lcd.print("CANNOT READ TFI ");
       sd.errorHalt(F("open"));
     }
 
@@ -634,12 +624,10 @@ void tfiselect() //load a tfi , send the midi, update screen
     }
     lcd.print(F(" "));
     lcd.write(byte(1));
-    if ((tfifilenumber[tfichannel-1]+1)<100) lcd.print(F("0"));
-    if ((tfifilenumber[tfichannel-1]+1)<10) lcd.print(F("0"));
+    printzeros(tfifilenumber[tfichannel-1]+1);
     lcd.print(tfifilenumber[tfichannel-1]+1);
     lcd.print(F("/"));
-    if (n<100) lcd.print(F("0"));
-    if (n<10) lcd.print(F("0"));
+    printzeros(n);
     lcd.print(n);
     lcd.setCursor(0,1);
     lcd.print(tfifilename);
@@ -656,9 +644,9 @@ void channelselect() //select a new channel, display current tfi on screen
 {
     if (!tfifile.open(&dirFile, dirIndex[tfifilenumber[tfichannel-1]], O_RDONLY)) {
       lcd.setCursor(0,0);
-      lcd.print(F("ERROR:"));
+      lcd.print("ERROR:");
       lcd.setCursor(0,1);
-      lcd.print(F("CANNOT READ TFI"));
+      lcd.print("CANNOT READ TFI");
       sd.errorHalt(F("open"));
   }
 
@@ -680,12 +668,10 @@ void channelselect() //select a new channel, display current tfi on screen
     }
     lcd.print(F(" "));
     lcd.write(byte(1));
-    if ((tfifilenumber[tfichannel-1]+1)<100) lcd.print(F("0"));
-    if ((tfifilenumber[tfichannel-1]+1)<10) lcd.print(F("0"));
+    printzeros(tfifilenumber[tfichannel-1]+1);
     lcd.print(tfifilenumber[tfichannel-1]+1);
     lcd.print(F("/"));
-    if (n<100) lcd.print(F("0"));
-    if (n<10) lcd.print(F("0"));
+    printzeros(n);
     lcd.print(n);
     lcd.setCursor(0,1);
     lcd.print(tfifilename);
@@ -863,18 +849,15 @@ void fmparamdisplay()
       lcd.print(F("01:Alg FB Pan"));
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][0];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][1];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][44];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -885,23 +868,19 @@ void fmparamdisplay()
       lcd.print(F("02:TL"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][4];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][14];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][24];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][34];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -912,23 +891,19 @@ void fmparamdisplay()
       lcd.print(F("03:Multiple"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][2];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][12];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][22];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][32];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -939,23 +914,19 @@ void fmparamdisplay()
       lcd.print(F("04:Rate Scale"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][5];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][15];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][25];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][35];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -966,23 +937,19 @@ void fmparamdisplay()
       lcd.print(F("05:Detune"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][3];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][13];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][23];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][33];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -993,23 +960,19 @@ void fmparamdisplay()
       lcd.print(F("06:Attack"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][6];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][16];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][26];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][36];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -1020,23 +983,19 @@ void fmparamdisplay()
       lcd.print(F("07:Decay 1"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][7];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][17];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][27];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][37];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -1047,23 +1006,19 @@ void fmparamdisplay()
       lcd.print(F("08:Decay 2"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][8];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][18];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][28];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][38];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -1074,23 +1029,19 @@ void fmparamdisplay()
       lcd.print(F("09:Release"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][10];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][20];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][30];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][40];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -1101,23 +1052,19 @@ void fmparamdisplay()
       lcd.print(F("10:TL 2"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][9];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][19];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][29];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][39];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -1128,23 +1075,19 @@ void fmparamdisplay()
       lcd.print(F("11:SSG-EG"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][11];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][21];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][31];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][41];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -1155,23 +1098,19 @@ void fmparamdisplay()
       lcd.print(F("12:Amp Mod"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][45];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][46];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][47];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][48];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }
@@ -1182,13 +1121,11 @@ void fmparamdisplay()
       lcd.print(F("13:FM / AM Lvl"));
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][42];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][43];
-      if (i<100) lcd.print(F(" "));
-      if (i<10) lcd.print(F(" "));
+      printspaces(i);
       lcd.print(i);
       break;
     }   
@@ -1395,56 +1332,100 @@ void fmccsend(byte potnumber, uint8_t potvalue)
 
 }
 
+void printzeros(int zeronum) // function for printing leading zeros to 3 digit numbers
+{
+  if (zeronum<100) lcd.print("0");
+  if (zeronum<10) lcd.print("0");
+}
+
+void printspaces(int zeronum) // function for printing leading spaces to 3 digit numbers
+{
+  if (zeronum<100) lcd.print(" ");
+  if (zeronum<10) lcd.print(" ");
+}
+
+
+// ============= MIDI FUNCTIONS =========================
+
 void MyHandleNoteOn(byte channel, byte pitch, byte velocity) {
 
-velocity = velocity*(1.7);
-if (velocity > 127) velocity = 127;
+// thank impbox for this formula, a super nice velocity curve :D
+velocity = (int)(pow((float)velocity / 127.0f, 0.2f) * 127.0f);
 
-if (mode == 3 || mode == 4) // if we're in poly mode
-{  
+bool repeatnote=0;
+
+if (mode==3 || mode==4) // if we're in poly mode
+{
+
+  // here's a fun feature of sustain, you can hit the same note twice
+  // let's turn it off and on again here
   
-  noteson++; // add one to the notes currently held down
-
-  if (noteson < 7) // if less than 7 notes are playing
+  for (int i = 0; i <= 5; i++) // now scan the current note array for repeats
   {
-    
-    for (int i = 0; i <= 5; i++) // voice scan to check for voices that are free
+    if (pitch==polynote[i]) // if the incoming note matches one in the array
     {
-      if (polyon[i]==0) // if the voice isn't on
+      MIDI.sendNoteOff(pitch, velocity, i+1); // turn off that old note
+      MIDI.sendNoteOn(pitch, velocity, i+1); // play the new note at that channel
+      repeatnote=1; // to bypass the rest
+      break;
+    }
+  } 
+
+  if (repeatnote==0)
+  {
+    if (sustain==0) {noteson++;} // add one to the notes currently held down 
+    else {sustainextra++;} // keep track of extra notes added while sustain held 
+    
+    lowestnote = polynote[0]; // don't steal the lowest note
+    
+    for (int i = 0; i <= 5; i++) // now scan the current note array for the lowest note
+    {
+      if (polynote[i]<lowestnote && polynote[i]!=0) lowestnote=polynote[i];
+    } 
+  
+    if (noteson+sustainextra < 6) // if less than 6 notes are playing
+    {
+      for (int i = 0; i <= 5; i++) // voice scan to check for voices that are free
       {
-        polyon[i]=1; // turn voice on
-        MIDI.sendNoteOn(pitch, velocity, i+1);
-        polynote[i] = pitch; // save the pitch of the note against the voice number
-        break;  
+        if (polyon[i]==0) // if the voice isn't on
+        {
+          polyon[i]=1; // turn voice on
+          MIDI.sendNoteOn(pitch, velocity, i+1);
+          polynote[i] = pitch; // save the pitch of the note against the voice number
+          noteheld[i] = 1; // the note is being held
+          break;  
+        }
       }
+  
     }
+    else // time to note steal if there are more than 6 notes playing
+    {  
+      long randchannel = random(0,6); // pick a random channel to switch
+  
+      if (polynote[randchannel]==lowestnote) // if in your randomness, you chose the lowest note
+      {
+        randchannel++; // next channel
+        if (randchannel==6) randchannel=0; // loop around
+      }
+  
+      // if there are notes being held, but they were turned off at some point, scan for empty voice slots
+      for (int i = 0; i <= 5; i++)
+      {
+        if (polynote[i]==0) {
+        randchannel=i; // fill the empty channel
+        break;
+        }     
+      }
+            
+      MIDI.sendNoteOff(polynote[randchannel], velocity, randchannel+1); // turn off that old note
+      MIDI.sendNoteOn(pitch, velocity, randchannel+1); // play the new note at that channel
+      polynote[randchannel] = pitch; // save the new pitch of the note against the voice number
+      polyon[randchannel]=1; // turn it on just in case
+      noteheld[randchannel] = 1; // the key is currently held
+    }  
+  } // if repeatnote
 
-  }
-  else // time to note steal if there are more than 6 notes playing
-  {  
-    uint8_t randchannel = random(5); // fuck if for now we're doing random off polyphony
-    uint8_t highestnote = 0; // use the highest note instead
-    uint8_t highestchannel = 0;
-    for (int i = 0; i <= 5; i++) // but first check for off notes
-    {
-      if (lowestnote<polynote[i]) lowestnote=polynote[i];
-      if (polynote[i]>highestnote) { highestnote=polynote[i]; highestchannel=i; }
-      if (polyon[i]==0) randchannel=i;
-    }
-    uint8_t randnote = polynote[randchannel];
-    if (randnote<lowestnote) // if the random note chosen was the lowest note
-    {
-      randchannel = highestchannel;
-    }
-    polyon[randchannel]=1; // turn it on just in case
-    
-    MIDI.sendNoteOff(randnote, velocity, randchannel+1); // turn off that old note
-    MIDI.sendNoteOn(pitch, velocity, randchannel+1); // play the new note at that channel
-    polynote[randchannel] = pitch; // save the new pitch of the note against the voice number
-    // no need to turn the voice indicator on
-  }
-
-} // if mode 3 or 4
+} // if mode 3
 else // otherwise, just revert to midi thru
 {
   MIDI.sendNoteOn(pitch, velocity, channel);  
@@ -1453,29 +1434,80 @@ else // otherwise, just revert to midi thru
 
 
 void MyHandleNoteOff(byte channel, byte pitch, byte velocity) {
-// note: channel here is useless, as it's getting the channel from the keyboard
-// in poly mode this doesn't mean anything, since the controller will be playing
-// through one channel and the program is assign channels itself
+// note: channel here is useless, as it's getting the channel from the keyboard 
 
-if (mode == 3 || mode == 4) // if we're in poly mode
+if (mode==3 || mode==4) // if we're in poly mode
 {    
 
-  if (noteson!=0) noteson--; // take one from the notes being played but don't let it go negative
+  if (sustain==0) // if the sustain pedal isn't being held
+  {
+    if (noteson!=0) noteson--; // take one from the notes being played but don't let it go negative
+  }
 
   for (int i = 0; i <= 5; i++) // we know the note but not the channel
   {
     if (pitch==polynote[i]) // if the pitch matches the note that was triggered off...
     {
-      polyon[i]=0; // turn voice off
-      MIDI.sendNoteOff(pitch, velocity, i+1); // turn that voice off against it's channel
-      polynote[i] = 0; // clear the pitch on that channel
-      break;  
+      if (sustain==1) // if the sustain pedal is held
+      {
+        sustainon[i] = 1; // turn on sustain on that channel
+        noteheld[i] = 0; // the key is no longer being held down
+        break;   
+      }
+      else
+      {
+        polyon[i]=0; // turn voice off
+        MIDI.sendNoteOff(pitch, velocity, i+1); // turn that voice off against it's channel
+        polynote[i] = 0; // clear the pitch on that channel
+        noteheld[i] = 0; // the key is no longer being held down
+        break;   
+      }
     }
   } 
 
-} // if mode 3 or 4
+} // if mode 3
 else // otherwise, just revert to midi thru
 {
   MIDI.sendNoteOff(pitch, velocity, channel);  
 }
 } // void note off
+
+
+void MyHandleCC(byte channel, byte number, byte value) {
+  if (number==64)
+  {
+    if (value==0)
+    {
+      sustain=0;
+      for (int i = 0; i <= 5; i++) // scan for sustained channels
+      {
+        if (noteheld[i]==0) // if the key is not currently being pushed
+        {
+          if (noteson>=sustainextra)
+          {
+            noteson = noteson-sustainextra; // take away the extra sustain notes
+          }
+          else
+          {
+            noteson=0;
+          }
+          sustainextra=0; // reset the sustain extras
+          sustainon[i]=0; // turn off sustain on that channel
+          polyon[i]=0; // turn voice off
+          MIDI.sendNoteOff(polynote[i], 0, i+1); // turn that voice off against it's channel
+          polynote[i] = 0; // clear the pitch on that channel  
+        }
+      }
+    }
+    else
+    {
+      sustain=1;
+    }
+  }
+  
+} // void cc
+
+void MyHandlePitchbend(byte channel, int bend)
+{
+  MIDI.sendPitchBend(bend, channel);
+} // void pitch bend
