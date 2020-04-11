@@ -1,4 +1,4 @@
-# GENajam v0.3
+# GENajam v0.4
 Front end editor for GenMDM by Littlescale
 
 A physical front end interface for GenMDM for Mega Drive. This hardware device will allow you to access all FM settings for the 6 channels offered by GenMDM as well as load TFI files from SD card and assign them per channel. Currently supports channels 1-6 for FM. PCM mode is not supported. Saving is not supported at the moment.
@@ -70,7 +70,7 @@ version 0.2 - Can load up to 32 TFI instrument files off the root on an SD card 
 
 version 0.1 - Can load up to 64 TFI instrument files off the root on an SD card and you can select instruments for channels 1-6 individually.
 
-Build Roadmap:
+# Build Roadmap
 1. Read from SD Card
 2. Assign programs to channels
 3. Add screen and navigation 
@@ -79,3 +79,9 @@ Build Roadmap:
 6. Add pages for all editable elements <===
 7. Add save state
 8. Add save new patch
+
+# Bug List
+- Pretty sure that TL2 should be inverted
+- I'm not actually sure that panning does anything
+- I'm not actually sure if the mod and FM LFOs do anything
+- Files load in a strange order, something to do with SDfat
