@@ -36,15 +36,17 @@ There is a folder of sample TFI files that you can test by loading them to the r
 
 # Instructions
 
-Load the TFI samples under the TFI folder in this GITHUB to the root of an SD card formatted for Arduino. You can currently load 64 files maximum. The INO file is currently set up for an NTSC tuning mode. To change this to PAL tuning mode, edit line 175:
+Load the TFI samples under the TFI folder in this GITHUB to the root of an SD card formatted for Arduino. You can currently load 64 files maximum. The INO file is currently set up for an NTSC tuning mode. To change this to PAL tuning mode, edit this line in setup:
 
 ```
-175 MIDI.sendControlChange(83,65,1); // set GENMDM to NTSC
+MIDI.sendControlChange(83,65,1); // set GENMDM to NTSC
 ```
 or
 ```
-175 MIDI.sendControlChange(83,0,1); // set GENMDM to PAL
+MIDI.sendControlChange(83,0,1); // set GENMDM to PAL
 ```
+
+You can find more TFI files here: https://little-scale.blogspot.com/2013/02/all-sega-genesis-mega-drive-tfi.html
 
 ## MONO | Preset Mode
 
