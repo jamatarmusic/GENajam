@@ -80,7 +80,9 @@ version 0.1 - Can load up to 64 TFI instrument files off the root on an SD card 
 3. Add screen and navigation 
 4. Add polyphony
 5. Add editor mode
-6. Add pages for all editable elements <===
+6. Add pages for all editable elements
+7. Add sustain pedal <====
+8. Make FM parameters reflect their proper values 
 7. Add save state
 8. Add save new patch
 
@@ -89,3 +91,4 @@ version 0.1 - Can load up to 64 TFI instrument files off the root on an SD card 
 - I'm not actually sure that panning does anything
 - I'm not actually sure if the mod and FM LFOs do anything
 - Files load in a strange order, something to do with SDfat
+- I have a sneaking suspition that OP 2 and OP 3 are the wrong way around...
