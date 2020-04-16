@@ -1,4 +1,4 @@
-// GENajam v0.4 - JAMATAR 2020
+// GENajam v0.5 - JAMATAR 2020
 // --------------------
 // This is a front end for Litte-scale's GENMDM module for Mega Drive
 // Currently for: Arduino MEGA 2640 or Leonardo
@@ -60,6 +60,7 @@ byte emojipoly[] = {
 //debouncing
 
 unsigned long buttonpushed = 0;      // when a button is pushed, mark what millis it was pushed
+unsigned long sustainpushed = 0;      // debounce the sustain
 const uint16_t debouncedelay = 200;   //the debounce time which user sets prior to run
 unsigned long messagestart = 0; // when a message starts, mark what millis it displayed at
 const uint16_t messagedelay = 1000; // how long to display messages for
@@ -107,6 +108,7 @@ uint8_t mode=1;
 uint8_t polynote[6] = {0, 0, 0, 0, 0, 0}; // what note is in each channel
 bool polyon[6] = {0, 0, 0, 0, 0, 0}; // what channels have voices playing
 bool sustainon[6] = {0, 0, 0, 0, 0, 0}; // what channels are sustained
+bool noteheld[6] = {0, 0, 0, 0, 0, 0}; // what notes are currently held down
 uint8_t noteson = 0; // how many notes are on
 uint8_t sustainextra = 0; // how many notes are added in sustain
 uint8_t lowestnote = 0; // don't steal the lowest note
@@ -151,7 +153,7 @@ void setup()
     lcd.setCursor(0,0);
     lcd.print("JamaGEN START!");
     lcd.setCursor(0,1);
-    lcd.print("version 0.3");
+    lcd.print("version 0.5");
 
     delay(500);
   
@@ -174,7 +176,8 @@ void setup()
 
   MIDI.setHandleNoteOn(MyHandleNoteOn);
   MIDI.setHandleNoteOff(MyHandleNoteOff);
-  MIDI.setHandleControlChange(MyHandleCC); 
+  MIDI.setHandleControlChange(MyHandleCC);
+  MIDI.setHandlePitchBend(MyHandlePitchbend);
   
   MIDI.sendControlChange(83,65,1); // set GENMDM to NTSC
 
@@ -203,21 +206,12 @@ void setup()
   delay(700);
 
   //initialise all channels
+  for (int i = 6; i > 0; i--)
+  {
+  tfichannel=i;
+  tfiselect();
+  }
 
-  tfichannel=6;
-  tfiselect();
-  tfichannel=5;
-  tfiselect();
-  tfichannel=4;
-  tfiselect();
-  tfichannel=3;
-  tfiselect();
-  tfichannel=2;
-  tfiselect();
-  tfichannel=1;
-  tfiselect();
-
-  //test tone all channnels
   
 } // void setup
 
@@ -740,7 +734,7 @@ void tfisend(int opnarray[42], int sendchannel)
 
     MIDI.sendControlChange(75,0,sendchannel); //FM Level
     MIDI.sendControlChange(76,0,sendchannel); //AM Level
-    MIDI.sendControlChange(75,127,sendchannel); //Stereo (centered)
+    MIDI.sendControlChange(77,127,sendchannel); //Stereo (centered)
 
     MIDI.sendControlChange(70,0,sendchannel); //OP1 Amplitude Modulation
     MIDI.sendControlChange(71,0,sendchannel); //OP2 Amplitude Modulation
@@ -792,10 +786,10 @@ void tfisend(int opnarray[42], int sendchannel)
     fmsettings[tfichannel-1][29] = opnarray[29]*8; //OP3 Release Rate
     fmsettings[tfichannel-1][39] = opnarray[39]*8; //OP4 Release Rate
 
-    fmsettings[tfichannel-1][10] = opnarray[10]*8; //OP1 2nd Total Level
-    fmsettings[tfichannel-1][20] = opnarray[20]*8; //OP2 2nd Total Level
-    fmsettings[tfichannel-1][30] = opnarray[30]*8; //OP3 2nd Total Level
-    fmsettings[tfichannel-1][40] = opnarray[40]*8; //OP4 2nd Total Level
+    fmsettings[tfichannel-1][10] = 127-(opnarray[10]*8); //OP1 2nd Total Level
+    fmsettings[tfichannel-1][20] = 127-(opnarray[20]*8); //OP2 2nd Total Level
+    fmsettings[tfichannel-1][30] = 127-(opnarray[30]*8); //OP3 2nd Total Level
+    fmsettings[tfichannel-1][40] = 127-(opnarray[40]*8); //OP4 2nd Total Level
 
     fmsettings[tfichannel-1][11] = opnarray[11]*8; //OP1 SSG-EG
     fmsettings[tfichannel-1][21] = opnarray[21]*8; //OP2 SSG-EG
@@ -1159,7 +1153,7 @@ void operatorparamdisplay()
       if (currentpotvalue[i]<100) lcd.print(F(" "));
       if (currentpotvalue[i]<10) lcd.print(F(" "));
       if (currentpotvalue[i]==1) currentpotvalue[i]=0; // flatten that shiz
-      if (currentpotvalue[i]==126) currentpotvalue[i]=127; // flatten that shiz
+      if (currentpotvalue[i]==126) currentpotvalue[i]=127; // max that shiz
       lcd.print(currentpotvalue[i]);
       prevpotvalue[i] = currentpotvalue[i];
 
@@ -1201,7 +1195,7 @@ void fmccsend(byte potnumber, uint8_t potvalue)
       lcd.print(F("   ")); // just blank out the unused pot display
       if (potnumber==1) {fmsettings[tfichannel-1][0] = potvalue; MIDI.sendControlChange(14,potvalue,tfichannel);} //Algorithm
       if (potnumber==2) {fmsettings[tfichannel-1][1] = potvalue; MIDI.sendControlChange(15,potvalue,tfichannel);} //Feedback
-      if (potnumber==3) {fmsettings[tfichannel-1][44] = potvalue; MIDI.sendControlChange(75,potvalue,tfichannel);} //Pan
+      if (potnumber==3) {fmsettings[tfichannel-1][44] = potvalue; MIDI.sendControlChange(77,potvalue,tfichannel);} //Pan
       break;
     }
 
@@ -1364,9 +1358,11 @@ if (mode==3 || mode==4) // if we're in poly mode
     {
       MIDI.sendNoteOff(pitch, velocity, i+1); // turn off that old note
       MIDI.sendNoteOn(pitch, velocity, i+1); // play the new note at that channel
+      noteheld[i] = 1; // the note is still being held (it got turned off in note off)
       repeatnote=1; // to bypass the rest
       break;
     }
+    MIDI.read();
   } 
 
   if (repeatnote==0)
@@ -1379,6 +1375,7 @@ if (mode==3 || mode==4) // if we're in poly mode
     for (int i = 0; i <= 5; i++) // now scan the current note array for the lowest note
     {
       if (polynote[i]<lowestnote && polynote[i]!=0) lowestnote=polynote[i];
+      MIDI.read();
     } 
   
     if (noteson+sustainextra < 6) // if less than 6 notes are playing
@@ -1390,8 +1387,10 @@ if (mode==3 || mode==4) // if we're in poly mode
           polyon[i]=1; // turn voice on
           MIDI.sendNoteOn(pitch, velocity, i+1);
           polynote[i] = pitch; // save the pitch of the note against the voice number
+          noteheld[i] = 1; // the note is being held
           break;  
         }
+        MIDI.read();
       }
   
     }
@@ -1411,17 +1410,20 @@ if (mode==3 || mode==4) // if we're in poly mode
         if (polynote[i]==0) {
         randchannel=i; // fill the empty channel
         break;
-        }     
+        }
+        MIDI.read();     
       }
-            
+      
+      MIDI.read();      
       MIDI.sendNoteOff(polynote[randchannel], velocity, randchannel+1); // turn off that old note
       MIDI.sendNoteOn(pitch, velocity, randchannel+1); // play the new note at that channel
       polynote[randchannel] = pitch; // save the new pitch of the note against the voice number
       polyon[randchannel]=1; // turn it on just in case
+      noteheld[randchannel] = 1; // the key is currently held
     }  
   } // if repeatnote
 
-} // if mode 3 or 4
+} // if mode 3
 else // otherwise, just revert to midi thru
 {
   MIDI.sendNoteOn(pitch, velocity, channel);  
@@ -1442,24 +1444,27 @@ if (mode==3 || mode==4) // if we're in poly mode
 
   for (int i = 0; i <= 5; i++) // we know the note but not the channel
   {
+    MIDI.read();
     if (pitch==polynote[i]) // if the pitch matches the note that was triggered off...
     {
       if (sustain==1) // if the sustain pedal is held
       {
-        sustainon[i]=1; // turn on sustain on that channel
-        break;    
+        sustainon[i] = 1; // turn on sustain on that channel
+        noteheld[i] = 0; // the key is no longer being held down
+        break;   
       }
       else
       {
         polyon[i]=0; // turn voice off
         MIDI.sendNoteOff(pitch, velocity, i+1); // turn that voice off against it's channel
         polynote[i] = 0; // clear the pitch on that channel
+        noteheld[i] = 0; // the key is no longer being held down
         break;   
       }
     }
   } 
 
-} // if mode 3 or 4
+} // if mode 3
 else // otherwise, just revert to midi thru
 {
   MIDI.sendNoteOff(pitch, velocity, channel);  
@@ -1468,6 +1473,7 @@ else // otherwise, just revert to midi thru
 
 
 void MyHandleCC(byte channel, byte number, byte value) {
+    
   if (number==64)
   {
     if (value==0)
@@ -1475,26 +1481,39 @@ void MyHandleCC(byte channel, byte number, byte value) {
       sustain=0;
       for (int i = 0; i <= 5; i++) // scan for sustained channels
       {
-        if (noteson>=sustainextra)
+        MIDI.read();
+        if (noteheld[i]==0) // if the key is not currently being pushed
         {
-          noteson = noteson-sustainextra; // take away the extra sustain notes
+          if (noteson>=sustainextra)
+          {
+            noteson = noteson-sustainextra; // take away the extra sustain notes
+          }
+          else
+          {
+            noteson=0;
+          }
+          sustainextra=0; // reset the sustain extras
+          sustainon[i]=0; // turn off sustain on that channel
+          polyon[i]=0; // turn voice off
+          MIDI.sendNoteOff(polynote[i], 0, i+1); // turn that voice off against it's channel
+          polynote[i] = 0; // clear the pitch on that channel  
         }
-        else
-        {
-          noteson=0;
-        }
-        
-        sustainextra=0; // reset the sustain extras
-        sustainon[i]=0; // turn off sustain on that channel
-        polyon[i]=0; // turn voice off
-        MIDI.sendNoteOff(polynote[i], 0, i+1); // turn that voice off against it's channel
-        polynote[i] = 0; // clear the pitch on that channel  
       }
     }
     else
     {
+      MIDI.read();
+      if ((millis() - sustainpushed) > 30) {    // debounce the sustain pedal
       sustain=1;
+      sustainpushed = millis(); // debounce
+      }
     }
+  
   }
-  // MIDI.sendControlChange(number, value, channel);
-}
+  
+} // void cc
+
+void MyHandlePitchbend(byte channel, int bend)
+{
+  MIDI.sendPitchBend(bend, channel);
+} // void pitch bend
