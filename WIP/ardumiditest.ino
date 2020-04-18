@@ -45,10 +45,14 @@ uint8_t cc;
 int mode = 3;
 
 // polyphony settings
-uint8_t polynote[6] = {0, 0, 0, 0, 0, 0};
-bool polyon[6] = {0, 0, 0, 0, 0, 0};
-uint8_t noteson = 0;
+uint8_t polynote[6] = {0, 0, 0, 0, 0, 0}; // what note is in each channel
+bool polyon[6] = {0, 0, 0, 0, 0, 0}; // what channels have voices playing
+bool sustainon[6] = {0, 0, 0, 0, 0, 0}; // what channels are sustained
+bool noteheld[6] = {0, 0, 0, 0, 0, 0}; // what notes are currently held down
+uint8_t noteson = 0; // how many notes are on
+uint8_t sustainextra = 0; // how many notes are added in sustain
 uint8_t lowestnote = 0; // don't steal the lowest note
+bool sustain = 0; // is the pedal on
 
 
 void setup()
@@ -65,11 +69,11 @@ pinMode(potPin4, INPUT);
     MIDI.begin(MIDI_CHANNEL_OMNI);
     MIDI.turnThruOff();    
                
-  MIDI.setHandleNoteOn(MyHandleNoteOn); // This is important!! This command
-  // tells the Midi Library which function you want to call when a NOTE ON command
-  // is received. In this case it's "MyHandleNoteOn".
-  MIDI.setHandleNoteOff(MyHandleNoteOff); // This command tells the Midi Library 
-  // to call "MyHandleNoteOff" when a NOTE OFF command is received.
+  MIDI.setHandleNoteOn(MyHandleNoteOn);
+  MIDI.setHandleNoteOff(MyHandleNoteOff);
+  MIDI.setHandleControlChange(MyHandleCC);
+  MIDI.setHandlePitchBend(MyHandlePitchbend);
+
 
 }
 
@@ -85,11 +89,18 @@ if (lowestnote<10) lcd.print("0");
 lcd.print(lowestnote);
 */
 
-lcd.setCursor(14,1);
-if (noteson<10) lcd.print("0"); MIDI.read();
-lcd.print(noteson);
+lcd.setCursor(13,1);
+if (noteson+sustainextra<100) lcd.print("0"); MIDI.read();
+if (noteson+sustainextra<10) lcd.print("0"); MIDI.read();
+lcd.print(noteson+sustainextra);
 
-if (noteson<7) 
+ lcd.setCursor(13,0);
+
+if (sustain==0) lcd.print("   ");
+if (sustain==1) lcd.print("SUS");
+
+
+if (noteson+sustainextra<6) 
 {
 lcd.setCursor(12,0); MIDI.read();
 lcd.print(" ");  
@@ -106,7 +117,7 @@ for (int i = 0; i <= 2; i++)
 {
   if (polynote[i]<10) lcd.print("0");
   lcd.print(polynote[i]);
-  if (polyon[i]==1)
+  if (noteheld[i]==1)
   {
   lcd.print(".");  
   }
@@ -179,64 +190,81 @@ lcd.print(" ");
 
 void MyHandleNoteOn(byte channel, byte pitch, byte velocity) {
 
-velocity = velocity*2;
-if (velocity > 127) velocity = 127;
+// thank impbox for this formula, a super nice velocity curve :D
+velocity = (int)(pow((float)velocity / 127.0f, 0.2f) * 127.0f);
 
+bool repeatnote=0;
 
-lcd.setCursor(13,0);
-if (velocity<100) lcd.print("0");
-if (velocity<10) lcd.print("0");
-lcd.print(velocity);
+if (mode==3 || mode==4) // if we're in poly mode
+{
 
-if (mode == 3) // if we're in poly mode
-{  
+  // here's a fun feature of sustain, you can hit the same note twice
+  // let's turn it off and on again here
   
-  noteson++; // add one to the notes currently held down
-  lowestnote = polynote[0]; // don't steal the lowest note
-  
-  for (int i = 0; i <= 5; i++) // now scan the current note array for the lowest note
+  for (int i = 0; i <= 5; i++) // now scan the current note array for repeats
   {
-    if (polynote[i]<lowestnote && polynote[i]!=0) lowestnote=polynote[i];
+    if (pitch==polynote[i]) // if the incoming note matches one in the array
+    {
+      MIDI.sendNoteOff(pitch, velocity, i+1); // turn off that old note
+      MIDI.sendNoteOn(pitch, velocity, i+1); // play the new note at that channel
+      repeatnote=1; // to bypass the rest
+      break;
+    }
   } 
 
-  if (noteson < 7) // if less than 7 notes are playing
+  if (repeatnote==0)
   {
-    for (int i = 0; i <= 5; i++) // voice scan to check for voices that are free
+    if (sustain==0) {noteson++;} // add one to the notes currently held down 
+    else {sustainextra++;} // keep track of extra notes added while sustain held 
+    
+    lowestnote = polynote[0]; // don't steal the lowest note
+    
+    for (int i = 0; i <= 5; i++) // now scan the current note array for the lowest note
     {
-      if (polyon[i]==0) // if the voice isn't on
+      if (polynote[i]<lowestnote && polynote[i]!=0) lowestnote=polynote[i];
+    } 
+  
+    if (noteson+sustainextra < 6) // if less than 6 notes are playing
+    {
+      for (int i = 0; i <= 5; i++) // voice scan to check for voices that are free
       {
-        polyon[i]=1; // turn voice on
-        MIDI.sendNoteOn(pitch, velocity, i+1);
-        polynote[i] = pitch; // save the pitch of the note against the voice number
-        break;  
+        if (polyon[i]==0) // if the voice isn't on
+        {
+          polyon[i]=1; // turn voice on
+          MIDI.sendNoteOn(pitch, velocity, i+1);
+          polynote[i] = pitch; // save the pitch of the note against the voice number
+          noteheld[i] = 1; // the note is being held
+          break;  
+        }
       }
+  
     }
-
-  }
-  else // time to note steal if there are more than 6 notes playing
-  {  
-    long randchannel = random(0,6); // pick a random channel to switch
-
-    if (polynote[randchannel]==lowestnote) // if in your randomness, you chose the lowest note
-    {
-      randchannel++; // next channel
-      if (randchannel==6) randchannel=0; // loop around
-    }
-
-    // if there are notes being held, but they were turned off at some point, scan for empty voice slots
-    for (int i = 0; i <= 5; i++)
-    {
-      if (polynote[i]==0) {
-      randchannel=i; // fill the empty channel
-      break;
-      }     
-    }
-          
-    MIDI.sendNoteOff(polynote[randchannel], velocity, randchannel+1); // turn off that old note
-    MIDI.sendNoteOn(pitch, velocity, randchannel+1); // play the new note at that channel
-    polynote[randchannel] = pitch; // save the new pitch of the note against the voice number
-    polyon[randchannel]=1; // turn it on just in case
-  }
+    else // time to note steal if there are more than 6 notes playing
+    {  
+      long randchannel = random(0,6); // pick a random channel to switch
+  
+      if (polynote[randchannel]==lowestnote) // if in your randomness, you chose the lowest note
+      {
+        randchannel++; // next channel
+        if (randchannel==6) randchannel=0; // loop around
+      }
+  
+      // if there are notes being held, but they were turned off at some point, scan for empty voice slots
+      for (int i = 0; i <= 5; i++)
+      {
+        if (polynote[i]==0) {
+        randchannel=i; // fill the empty channel
+        break;
+        }     
+      }
+            
+      MIDI.sendNoteOff(polynote[randchannel], velocity, randchannel+1); // turn off that old note
+      MIDI.sendNoteOn(pitch, velocity, randchannel+1); // play the new note at that channel
+      polynote[randchannel] = pitch; // save the new pitch of the note against the voice number
+      polyon[randchannel]=1; // turn it on just in case
+      noteheld[randchannel] = 1; // the key is currently held
+    }  
+  } // if repeatnote
 
 } // if mode 3
 else // otherwise, just revert to midi thru
@@ -249,19 +277,32 @@ else // otherwise, just revert to midi thru
 void MyHandleNoteOff(byte channel, byte pitch, byte velocity) {
 // note: channel here is useless, as it's getting the channel from the keyboard 
 
-if (mode == 3) // if we're in poly mode
+if (mode==3 || mode==4) // if we're in poly mode
 {    
 
-  if (noteson!=0) noteson--; // take one from the notes being played but don't let it go negative
+  if (sustain==0) // if the sustain pedal isn't being held
+  {
+    if (noteson!=0) noteson--; // take one from the notes being played but don't let it go negative
+  }
 
   for (int i = 0; i <= 5; i++) // we know the note but not the channel
   {
     if (pitch==polynote[i]) // if the pitch matches the note that was triggered off...
     {
-      polyon[i]=0; // turn voice off
-      MIDI.sendNoteOff(pitch, velocity, i+1); // turn that voice off against it's channel
-      polynote[i] = 0; // clear the pitch on that channel
-      break;  
+      if (sustain==1) // if the sustain pedal is held
+      {
+        sustainon[i] = 1; // turn on sustain on that channel
+        noteheld[i] = 0; // the key is no longer being held down
+        break;   
+      }
+      else
+      {
+        polyon[i]=0; // turn voice off
+        MIDI.sendNoteOff(pitch, velocity, i+1); // turn that voice off against it's channel
+        polynote[i] = 0; // clear the pitch on that channel
+        noteheld[i] = 0; // the key is no longer being held down
+        break;   
+      }
     }
   } 
 
@@ -272,8 +313,42 @@ else // otherwise, just revert to midi thru
 }
 } // void note off
 
-/*
+
 void MyHandleCC(byte channel, byte number, byte value) {
-  MIDI.sendControlChange(number, value, channel); 
-}
-*/
+  if (number==64)
+  {
+    if (value==0)
+    {
+      sustain=0;
+      for (int i = 0; i <= 5; i++) // scan for sustained channels
+      {
+        if (noteheld[i]==0) // if the key is not currently being pushed
+        {
+          if (noteson>=sustainextra)
+          {
+            noteson = noteson-sustainextra; // take away the extra sustain notes
+          }
+          else
+          {
+            noteson=0;
+          }
+          sustainextra=0; // reset the sustain extras
+          sustainon[i]=0; // turn off sustain on that channel
+          polyon[i]=0; // turn voice off
+          MIDI.sendNoteOff(polynote[i], 0, i+1); // turn that voice off against it's channel
+          polynote[i] = 0; // clear the pitch on that channel  
+        }
+      }
+    }
+    else
+    {
+      sustain=1;
+    }
+  }
+  
+} // void cc
+
+void MyHandlePitchbend(byte channel, int bend)
+{
+  MIDI.sendPitchBend(bend, channel);
+} // void pitch bend
