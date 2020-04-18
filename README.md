@@ -1,4 +1,4 @@
-# GENajam v0.4
+# GENajam v0.6
 Front end editor for GenMDM by Littlescale
 
 A physical front end interface for GenMDM for Mega Drive. This hardware device will allow you to access all FM settings for the 6 channels offered by GenMDM as well as load TFI files from SD card and assign them per channel. Currently supports channels 1-6 for FM. PCM mode is not supported. Saving is not supported at the moment.
@@ -48,6 +48,8 @@ MIDI.sendControlChange(83,0,1); // set GENMDM to PAL
 
 You can find more TFI files here: https://little-scale.blogspot.com/2013/02/all-sega-genesis-mega-drive-tfi.html
 
+The LFO on and off is assigned to MOD WHEEL (CC ch 1). To activate it, first go to the FM editing section, head to Page 13 LFO/FM/AM and dial up pot 3 FM. To turn on AM, go to page 12 Amp Mod and set to 127 on all the operators you want it on, then dial up AM on Page 13.
+
 ## MONO | Preset Mode
 
 This mode allows you to navigate up and down between the MIDI channels 1 to 6 and forward and backwards through your TFI files from the SD card. Loading a new TFI file completely overwrites the FM settings on that channel.
@@ -65,6 +67,10 @@ Switching to this mode allows you to load a TFI file to all 6 channels at once a
 Once a TFI setting has been chosen, enter this mode to edit the raw FM parameters. Left and right scrolls through the parameters. Potentimeters 1-4 control the Operaters 1-4 respectively and affects all 6 channels at once.
 
 # Current state
+
+version 0.6 - Fixed panning and added LFO toggle mapped to the mod wheel. It'll be off by default on the TFI files (as it's not part of the file), so you can activate it using page 12 and 13 of the FM editing section. Read the instructions above for more detail. Great for doing vibrato or adding tremolo to an epiano.
+
+version 0.5 - Fixed a bunch of broken stuff and made the velocity curve a little nicer to play
 
 version 0.4 - Added sustain pedal support over polyphony. It mostly works, but it's tricky to track notes across the 6 channels, so sometimes funny things happen. Added in a midi function to pass along pitch bends so that works now too. Also thanks to Impbox for writing a really nice bezier curve velocity formula that I can use to fine tune the playablity of the velocity. GenMDM uses a really linear curve that works for programming, but not so much for playing via a keyboard. The velocity curve brings back some of the "feel" of a synth.
 
@@ -87,8 +93,5 @@ version 0.1 - Can load up to 64 TFI instrument files off the root on an SD card 
 8. Add save new patch
 
 # Bug List
-- Pretty sure that TL2 should be inverted
-- I'm not actually sure that panning does anything
-- I'm not actually sure if the mod and FM LFOs do anything
 - Files load in a strange order, something to do with SDfat
-- I have a sneaking suspition that OP 2 and OP 3 are the wrong way around...
+- I still have a sneaking suspition that OP 2 and OP 3 are the wrong way around...
