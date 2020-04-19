@@ -60,7 +60,6 @@ byte emojipoly[] = {
 //debouncing
 
 unsigned long buttonpushed = 0;      // when a button is pushed, mark what millis it was pushed
-unsigned long sustainpushed = 0;      // debounce the sustain
 const uint16_t debouncedelay = 200;   //the debounce time which user sets prior to run
 unsigned long messagestart = 0; // when a message starts, mark what millis it displayed at
 const uint16_t messagedelay = 1000; // how long to display messages for
@@ -109,8 +108,6 @@ uint8_t polynote[6] = {0, 0, 0, 0, 0, 0}; // what note is in each channel
 bool polyon[6] = {0, 0, 0, 0, 0, 0}; // what channels have voices playing
 bool sustainon[6] = {0, 0, 0, 0, 0, 0}; // what channels are sustained
 bool noteheld[6] = {0, 0, 0, 0, 0, 0}; // what notes are currently held down
-uint8_t noteson = 0; // how many notes are on
-uint8_t sustainextra = 0; // how many notes are added in sustain
 uint8_t lowestnote = 0; // don't steal the lowest note
 bool sustain = 0; // is the pedal on
 
@@ -119,7 +116,7 @@ uint8_t fmscreen=1;
 
 // global variable for storing FM settings for each channel
 uint8_t fmsettings[6][50];
-uint8_t lfospeed=0;
+uint8_t lfospeed=64;
 
 uint8_t potPin1 = A1;
 uint8_t potPin2 = A2;
@@ -179,8 +176,13 @@ void setup()
   MIDI.setHandleNoteOff(MyHandleNoteOff);
   MIDI.setHandleControlChange(MyHandleCC);
   MIDI.setHandlePitchBend(MyHandlePitchbend);
-  
-  MIDI.sendControlChange(83,65,1); // set GENMDM to NTSC
+
+  // ========================================================= SET REGION HERE
+
+  MIDI.sendControlChange(83,1,1); // set GENMDM to PAL
+  //MIDI.sendControlChange(83,75,1); // set GENMDM to NTSC
+
+  // ========================================================= SET REGION HERE
 
  // List files in root directory and get max file number
   if (!dirFile.open("/", O_RDONLY)) {
@@ -256,9 +258,9 @@ MIDI.read();
       
       case btnUP:
       {
-      tfichannel=tfichannel+1;
-      if(tfichannel==(7)){ // if max channels reached, loop around
-      tfichannel=1;
+      tfichannel=tfichannel-1;
+      if(tfichannel==(0)){ // if max channels reached, loop around
+      tfichannel=6;
       }
       channelselect();
       break;
@@ -266,9 +268,9 @@ MIDI.read();
       
       case btnDOWN:
       {
-      tfichannel=tfichannel-1;
-      if(tfichannel==(0)){ // if max channels reached, loop around
-      tfichannel=6;
+      tfichannel=tfichannel+1;
+      if(tfichannel==(7)){ // if max channels reached, loop around
+      tfichannel=1;
       }
       channelselect();
       break;
@@ -310,9 +312,9 @@ MIDI.read();
       
       case btnUP:
       {
-      tfichannel=tfichannel+1;
-      if(tfichannel==(7)){ // if max channels reached, loop around
-      tfichannel=1;
+      tfichannel=tfichannel-1;
+      if(tfichannel==(0)){ // if max channels reached, loop around
+      tfichannel=6;
       }
       fmparamdisplay();
       break;
@@ -320,9 +322,9 @@ MIDI.read();
       
       case btnDOWN:
       {
-      tfichannel=tfichannel-1;
-      if(tfichannel==(0)){ // if max channels reached, loop around
-      tfichannel=6;
+      tfichannel=tfichannel+1;
+      if(tfichannel==(7)){ // if max channels reached, loop around
+      tfichannel=1;
       }
       fmparamdisplay();
       break;
@@ -443,28 +445,36 @@ int read_LCD_buttons() // function for reading the buttons
   }
   
     if ((millis() - buttonpushed) > debouncedelay) {    // only register a new button push if no button has been pushed in debouncedelay millis
-    
-      if (adc_key_in < 50) {
+
+      // you're going to want to customise this depending on the LCD sheild you have
+      // check your button min / max analog read values by running and LCD sheild keypad test
+
+      // 0 - 57 (0)
+      if (adc_key_in > 0 && adc_key_in < 88) {
       buttonpushed = millis();  
       return btnRIGHT;
       }
-      
-      if (adc_key_in < 195) {
+
+      // 97 - 157 (99)
+      if (adc_key_in > 98 && adc_key_in < 103) {
       buttonpushed = millis();  
       return btnUP;
       }
-      
-      if (adc_key_in < 380) {
+
+      // 254 - 271 (255)
+      if (adc_key_in > 254 && adc_key_in < 258) {
       buttonpushed = millis();  
       return btnDOWN;
       }
-      
-      if (adc_key_in < 555) {
+
+      // 404 - 423 (408)
+      if (adc_key_in > 404 && adc_key_in < 418) {
       buttonpushed = millis();  
       return btnLEFT;
       }
-      
-      if (adc_key_in < 790) {
+
+      // 629 - 647 (638)
+      if (adc_key_in > 636 && adc_key_in < 642) {
       buttonpushed = millis();  
       return btnSELECT;
       }
@@ -486,7 +496,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("MONO | Preset");
+      lcd.print("1 MONO | Preset");
       refreshscreen=1;
       break;
     }
@@ -496,7 +506,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("MONO | FM Edit");
+      lcd.print("2 MONO | FM Edit");
       // find out where the pots are
       prevpotvalue[0] = analogRead(potPin1)>>3;
       prevpotvalue[1] = analogRead(potPin2)>>3;
@@ -513,7 +523,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("POLY | Preset");
+      lcd.print("3 POLY | Preset");
       refreshscreen=1;
       break;
     }
@@ -523,7 +533,7 @@ void modechange() // when the mode button is changed, cycle the modes
       messagestart = millis();
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("POLY | FM Edit");
+      lcd.print("4 POLY | FM Edit");
       // find out where the pots are
       prevpotvalue[0] = analogRead(potPin1)>>3;
       prevpotvalue[1] = analogRead(potPin2)>>3;
@@ -733,14 +743,14 @@ void tfisend(int opnarray[42], int sendchannel)
     MIDI.sendControlChange(92,opnarray[31]*8,sendchannel); //OP3 SSG-EG  
     MIDI.sendControlChange(93,opnarray[41]*8,sendchannel); //OP4 SSG-EG
 
-    MIDI.sendControlChange(75,0,sendchannel); //FM Level
-    MIDI.sendControlChange(76,0,sendchannel); //AM Level
+    MIDI.sendControlChange(75,90,sendchannel); //FM Level // A good level of mod
+    MIDI.sendControlChange(76,127,sendchannel); //AM Level // Maxed amp mod
     MIDI.sendControlChange(77,127,sendchannel); //Stereo (centered)
 
-    MIDI.sendControlChange(70,0,sendchannel); //OP1 Amplitude Modulation
-    MIDI.sendControlChange(71,0,sendchannel); //OP2 Amplitude Modulation
-    MIDI.sendControlChange(72,0,sendchannel); //OP3 Amplitude Modulation
-    MIDI.sendControlChange(73,0,sendchannel); //OP4 Amplitude Modulation
+    MIDI.sendControlChange(70,0,sendchannel); //OP1 Amplitude Modulation (off)
+    MIDI.sendControlChange(71,0,sendchannel); //OP2 Amplitude Modulation (off)
+    MIDI.sendControlChange(72,0,sendchannel); //OP3 Amplitude Modulation (off)
+    MIDI.sendControlChange(73,0,sendchannel); //OP4 Amplitude Modulation (off)
 
     // Dump TFI settings into the global settings array
     
@@ -797,8 +807,8 @@ void tfisend(int opnarray[42], int sendchannel)
     fmsettings[tfichannel-1][31] = opnarray[31]*8; //OP3 SSG-EG
     fmsettings[tfichannel-1][41] = opnarray[41]*8; //OP4 SSG-EG
     
-    fmsettings[tfichannel-1][42] = 0; //FM Level
-    fmsettings[tfichannel-1][43] = 0; //AM Level
+    fmsettings[tfichannel-1][42] = 90; //FM Level
+    fmsettings[tfichannel-1][43] = 127; //AM Level
     fmsettings[tfichannel-1][44] = 127; //Stereo (centered)
     fmsettings[tfichannel-1][45] = 0; //OP1 Amplitude Modulation
     fmsettings[tfichannel-1][46] = 0; //OP2 Amplitude Modulation
@@ -1365,7 +1375,6 @@ if (mode==3 || mode==4) // if we're in poly mode
       MIDI.sendNoteOff(pitch, velocity, i+1); // turn off that old note
       MIDI.sendNoteOn(pitch, velocity, i+1); // play the new note at that channel
       noteheld[i] = 1; // the note is still being held (it got turned off in note off)
-      if(sustainextra<99) sustainextra++; // we're still adding another note to sustain i guess
       repeatnote=1; // to bypass the rest
       break;
     }
@@ -1374,9 +1383,6 @@ if (mode==3 || mode==4) // if we're in poly mode
 
   if (repeatnote==0)
   {
-    if (sustain==0) {noteson++;} // add one to the notes currently held down 
-    else {if(sustainextra<99) sustainextra++;} // keep track of extra notes added while sustain held 
-    
     lowestnote = polynote[0]; // don't steal the lowest note
     
     for (int i = 0; i <= 5; i++) // now scan the current note array for the lowest note
@@ -1385,51 +1391,29 @@ if (mode==3 || mode==4) // if we're in poly mode
       MIDI.read();
     } 
   
-    if (noteson+sustainextra < 6) // if less than 6 notes are playing
-    {
-      for (int i = 0; i <= 5; i++) // voice scan to check for voices that are free
-      {
-        if (polyon[i]==0) // if the voice isn't on
-        {
-          polyon[i]=1; // turn voice on
-          MIDI.sendNoteOn(pitch, velocity, i+1);
-          polynote[i] = pitch; // save the pitch of the note against the voice number
-          noteheld[i] = 1; // the note is being held
-          break;  
-        }
-        MIDI.read();
-      }
-  
-    }
-    else // time to note steal if there are more than 6 notes playing
-    {  
-      long randchannel = random(0,6); // pick a random channel to switch
-  
-      if (polynote[randchannel]==lowestnote) // if in your randomness, you chose the lowest note
-      {
-        randchannel++; // next channel
-        if (randchannel==6) randchannel=0; // loop around
-      }
-  
-      // if there are notes being held, but they were turned off at some point, scan for empty voice slots
-      for (int i = 0; i <= 5; i++)
-      {
-        if (polynote[i]==0) {
-        randchannel=i; // fill the empty channel
-        break;
-        }
-        MIDI.read();     
-      }
-      
-      MIDI.read();      
-      MIDI.sendNoteOff(polynote[randchannel], velocity, randchannel+1); // turn off that old note
-      MIDI.sendNoteOn(pitch, velocity, randchannel+1); // play the new note at that channel
-      polynote[randchannel] = pitch; // save the new pitch of the note against the voice number
-      polyon[randchannel]=1; // turn it on just in case
-      noteheld[randchannel] = 1; // the key is currently held
-    }  
-  } // if repeatnote
+    long randchannel = random(0,6); // pick a random channel to switch
 
+    if (polynote[randchannel]==lowestnote) // if in your randomness, you chose the lowest note
+    {
+      randchannel++; // next channel
+      if (randchannel==6) randchannel=0; // loop around
+    }
+
+    for (int i = 0; i <= 5; i++) // scan for empty voice slots
+    {
+      if (polynote[i]==0) {
+      randchannel=i; // fill the empty channel
+      break;
+      }
+      MIDI.read();     
+    }
+        
+    MIDI.sendNoteOff(polynote[randchannel], velocity, randchannel+1); // turn off that old note
+    MIDI.sendNoteOn(pitch, velocity, randchannel+1); // play the new note at that channel
+    polynote[randchannel] = pitch; // save the new pitch of the note against the voice number
+    polyon[randchannel]=1; // turn it on just in case
+    noteheld[randchannel] = 1; // the key is currently held
+  } // if repeatnote
 } // if mode 3
 else // otherwise, just revert to midi thru
 {
@@ -1444,11 +1428,6 @@ void MyHandleNoteOff(byte channel, byte pitch, byte velocity) {
 if (mode==3 || mode==4) // if we're in poly mode
 {    
 
-  if (sustain==0) // if the sustain pedal isn't being held
-  {
-    if (noteson>0) noteson--; // take one from the notes being played but don't let it go negative
-  }
-
   for (int i = 0; i <= 5; i++) // we know the note but not the channel
   {
     MIDI.read();
@@ -1462,15 +1441,14 @@ if (mode==3 || mode==4) // if we're in poly mode
       }
       else
       {
-        polyon[i]=0; // turn voice off
         MIDI.sendNoteOff(pitch, velocity, i+1); // turn that voice off against it's channel
+        polyon[i]=0; // turn voice off
         polynote[i] = 0; // clear the pitch on that channel
         noteheld[i] = 0; // the key is no longer being held down
         break;
       }
     }
   } 
-
 } // if mode 3
 else // otherwise, just revert to midi thru
 {
@@ -1482,22 +1460,17 @@ else // otherwise, just revert to midi thru
 void MyHandleCC(byte channel, byte number, byte value) { 
   if (number==64) // if sustain pedal CC
   {
-    if (value==0)
+    if (value==0) // if sustain pedal is in off state
     {
       sustain=0;
-      int countoffnotes = 0;   
       for (int i = 0; i <= 5; i++) // scan for sustained channels
       {
         MIDI.read();
         if (noteheld[i]==0) // if the key is not currently being pushed
         {
-          if (noteson>0) noteson--;
-          countoffnotes++;
-          if (countoffnotes==6) noteson=0; // if all 6 voices are off, zero the notes on;
-          sustainextra=0; // reset the sustain extras
+          MIDI.sendNoteOff(polynote[i], 0, i+1); // turn that voice off against it's channel
           sustainon[i]=0; // turn off sustain on that channel
           polyon[i]=0; // turn voice off
-          MIDI.sendNoteOff(polynote[i], 0, i+1); // turn that voice off against it's channel
           polynote[i] = 0; // clear the pitch on that channel 
         }
       }
@@ -1505,23 +1478,30 @@ void MyHandleCC(byte channel, byte number, byte value) {
     else
     {
       MIDI.read();
-      //if ((millis() - sustainpushed) > 30) {    // debounce the sustain pedal
       sustain=1;
-      //sustainpushed = millis(); // debounce
-      //}
     }
-  
-  }
+  } // if sustain
 
   if (number==1) // if modulation wheel
   {
-    if (value<=5) { MIDI.sendControlChange(74,0,1); }
-    if (value>5) { MIDI.sendControlChange(74,70,1); }
-  }
+    if (value<=5) { MIDI.sendControlChange(74,0,1); } // mod wheel below 5 turns off LFO
+    if (value>5) { MIDI.sendControlChange(74,70,1); } // mod wheel above 5 turns on LFO
+  } // if modulation
   
 } // void cc
 
 void MyHandlePitchbend(byte channel, int bend)
 {
-  MIDI.sendPitchBend(bend, channel);
+  if (mode==3 || mode==4) // if we're in poly mode
+  {    
+    for (int i = 0; i <= 5; i++) // send for all channels
+    {
+      MIDI.sendPitchBend(bend, i+1);
+      MIDI.read();
+    }
+  }
+  else
+  {
+    MIDI.sendPitchBend(bend, channel); // just midi thru  
+  }
 } // void pitch bend
