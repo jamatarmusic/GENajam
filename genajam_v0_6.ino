@@ -117,6 +117,8 @@ uint8_t fmscreen=1;
 // global variable for storing FM settings for each channel
 uint8_t fmsettings[6][50];
 uint8_t lfospeed=64;
+uint8_t polypan=64;
+uint8_t polyvoicenum=6;
 
 uint8_t potPin1 = A1;
 uint8_t potPin2 = A2;
@@ -814,7 +816,9 @@ void tfisend(int opnarray[42], int sendchannel)
     fmsettings[tfichannel-1][46] = 0; //OP2 Amplitude Modulation
     fmsettings[tfichannel-1][47] = 0; //OP3 Amplitude Modulation
     fmsettings[tfichannel-1][48] = 0; //OP4 Amplitude Modulation
-    fmsettings[tfichannel-1][49] = 0; //Patch is uneditted
+    fmsettings[tfichannel-1][49] = 0; //Patch is unedited
+
+    polypan = 0; // reset secret stereo mode
     
     /*
     // FOR TESTING CHANNEL
@@ -1328,8 +1332,19 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 13:
     {
       lcd.setCursor(1,1);
-      lcd.print(F("   ")); // just blank out the unused pot display
-      if (potnumber==1) {fmsettings[tfichannel-1][42] = potvalue; MIDI.sendControlChange(1,potvalue,1);} //LFO Speed (GLOBAL)
+      
+      if (polypan>64) // show pan mode enabled
+      {
+      lcd.print(F("PAN"));
+      }
+      else // otherwise just blank it
+      {
+      lcd.print(F("   "));
+      fmsettings[tfichannel-1][44] = 127; MIDI.sendControlChange(77,127,tfichannel); // reset the panning to center
+      }
+      
+      if (potnumber==0) {polypan = potvalue;} // enter secret pan mode 
+      if (potnumber==1) {lfospeed = potvalue; MIDI.sendControlChange(1,potvalue,1);} //LFO Speed (GLOBAL)
       if (potnumber==2) {fmsettings[tfichannel-1][42] = potvalue; MIDI.sendControlChange(75,potvalue,tfichannel);} //FM Level
       if (potnumber==3) {fmsettings[tfichannel-1][43] = potvalue; MIDI.sendControlChange(76,potvalue,tfichannel);} //AM Level
       break;
@@ -1372,6 +1387,13 @@ if (mode==3 || mode==4) // if we're in poly mode
   {
     if (pitch==polynote[i]) // if the incoming note matches one in the array
     {
+
+      if (polypan>64) // secret stereo mode
+      {
+      long randpan = random(33,127);
+      MIDI.sendControlChange(77,randpan,i+1);
+      }
+      
       MIDI.sendNoteOff(pitch, velocity, i+1); // turn off that old note
       MIDI.sendNoteOn(pitch, velocity, i+1); // play the new note at that channel
       noteheld[i] = 1; // the note is still being held (it got turned off in note off)
@@ -1406,6 +1428,12 @@ if (mode==3 || mode==4) // if we're in poly mode
       break;
       }
       MIDI.read();     
+    }
+
+    if (polypan>64) // secret stereo mode
+    {
+      long randpan = random(33,127);
+      MIDI.sendControlChange(77,randpan,randchannel+1);
     }
         
     MIDI.sendNoteOff(polynote[randchannel], velocity, randchannel+1); // turn off that old note
