@@ -1,0 +1,17 @@
+Prototype BOM
+
+Bill of materials
+
+1 x Arduino Leonardo
+1 x DFRobot LCD Keypad Sheild
+1 x leonardo / uno sized shield prototype board (to mount midi components, SD card reader and potentiometers)
+1 x SD card reader module (I'd use one with a voltage regulator on board, like a microSD card reader)
+4 x Linear 10kΩ potentiometers
+
+Midi section
+
+2 x stereo 3.5mm jacks (or 5 pin DIN midi jack if you can make them fit)
+1 x 6n138 Optocoupler
+1 x 1n914 Diode
+3 x 220 Ohm Resistor (1/4 Watt)
+1 x 4.7K Ohm Resistor (1/4 Watt)
