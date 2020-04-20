@@ -691,58 +691,62 @@ void tfisend(int opnarray[42], int sendchannel)
 {
   
     //send all TFI data to appropriate CCs
-      
+
+    // NOTE OP 2 and 3 are actually in the incorrect order
+    // on the GENMDM documenatation, because they are backwards
+    // when loading TFI files and on the original YN2612 documentation
+    
     MIDI.sendControlChange(14,opnarray[0]*16,sendchannel); //Algorithm 
     MIDI.sendControlChange(15,opnarray[1]*16,sendchannel); //Feedback
 
     MIDI.sendControlChange(20,opnarray[2]*8,sendchannel);  //OP1 Multiplier
-    MIDI.sendControlChange(21,opnarray[12]*8,sendchannel); //OP2 Multiplier
-    MIDI.sendControlChange(22,opnarray[22]*8,sendchannel); //OP3 Multiplier
+    MIDI.sendControlChange(21,opnarray[12]*8,sendchannel); //OP3 Multiplier
+    MIDI.sendControlChange(22,opnarray[22]*8,sendchannel); //OP2 Multiplier
     MIDI.sendControlChange(23,opnarray[32]*8,sendchannel); //OP4 Multiplier
 
     MIDI.sendControlChange(24,opnarray[3]*32,sendchannel);  //OP1 Detune
-    MIDI.sendControlChange(25,opnarray[13]*32,sendchannel); //OP2 Detune
-    MIDI.sendControlChange(26,opnarray[23]*32,sendchannel); //OP3 Detune
+    MIDI.sendControlChange(25,opnarray[13]*32,sendchannel); //OP3 Detune
+    MIDI.sendControlChange(26,opnarray[23]*32,sendchannel); //OP2 Detune
     MIDI.sendControlChange(27,opnarray[33]*32,sendchannel); //OP4 Detune
 
     MIDI.sendControlChange(16,127-opnarray[4],sendchannel);  //OP1 Total Level
-    MIDI.sendControlChange(17,127-opnarray[14],sendchannel); //OP2 Total Level
-    MIDI.sendControlChange(18,127-opnarray[24],sendchannel); //OP3 Total Level
+    MIDI.sendControlChange(17,127-opnarray[14],sendchannel); //OP3 Total Level
+    MIDI.sendControlChange(18,127-opnarray[24],sendchannel); //OP2 Total Level
     MIDI.sendControlChange(19,127-opnarray[34],sendchannel); //OP4 Total Level
 
     MIDI.sendControlChange(39,opnarray[5]*32,sendchannel);  //OP1 Rate Scaling
-    MIDI.sendControlChange(40,opnarray[15]*32,sendchannel); //OP2 Rate Scaling
-    MIDI.sendControlChange(41,opnarray[25]*32,sendchannel); //OP3 Rate Scaling
+    MIDI.sendControlChange(40,opnarray[15]*32,sendchannel); //OP3 Rate Scaling
+    MIDI.sendControlChange(41,opnarray[25]*32,sendchannel); //OP2 Rate Scaling
     MIDI.sendControlChange(42,opnarray[35]*32,sendchannel); //OP4 Rate Scaling
 
     MIDI.sendControlChange(43,opnarray[6]*4,sendchannel);  //OP1 Attack Rate
-    MIDI.sendControlChange(44,opnarray[16]*4,sendchannel); //OP2 Attack Rate
-    MIDI.sendControlChange(45,opnarray[26]*4,sendchannel); //OP3 Attack Rate
+    MIDI.sendControlChange(44,opnarray[16]*4,sendchannel); //OP3 Attack Rate
+    MIDI.sendControlChange(45,opnarray[26]*4,sendchannel); //OP2 Attack Rate
     MIDI.sendControlChange(46,opnarray[36]*4,sendchannel); //OP4 Attack Rate
 
     MIDI.sendControlChange(47,opnarray[7]*4,sendchannel);  //OP1 1st Decay Rate
-    MIDI.sendControlChange(48,opnarray[17]*4,sendchannel); //OP2 1st Decay Rate
-    MIDI.sendControlChange(49,opnarray[27]*4,sendchannel); //OP3 1st Decay Rate
+    MIDI.sendControlChange(48,opnarray[17]*4,sendchannel); //OP3 1st Decay Rate
+    MIDI.sendControlChange(49,opnarray[27]*4,sendchannel); //OP2 1st Decay Rate
     MIDI.sendControlChange(50,opnarray[37]*4,sendchannel); //OP4 1st Decay Rate
 
     MIDI.sendControlChange(51,opnarray[8]*8,sendchannel);  //OP1 2nd Decay Rate
-    MIDI.sendControlChange(52,opnarray[18]*8,sendchannel); //OP2 2nd Decay Rate
-    MIDI.sendControlChange(53,opnarray[28]*8,sendchannel); //OP3 2nd Decay Rate
+    MIDI.sendControlChange(52,opnarray[18]*8,sendchannel); //OP3 2nd Decay Rate
+    MIDI.sendControlChange(53,opnarray[28]*8,sendchannel); //OP2 2nd Decay Rate
     MIDI.sendControlChange(54,opnarray[38]*8,sendchannel); //OP4 2nd Decay Rate
 
     MIDI.sendControlChange(59,opnarray[9]*8,sendchannel);  //OP1 Release Rate
-    MIDI.sendControlChange(60,opnarray[19]*8,sendchannel); //OP2 Release Rate
-    MIDI.sendControlChange(61,opnarray[29]*8,sendchannel); //OP3 Release Rate
+    MIDI.sendControlChange(60,opnarray[19]*8,sendchannel); //OP3 Release Rate
+    MIDI.sendControlChange(61,opnarray[29]*8,sendchannel); //OP2 Release Rate
     MIDI.sendControlChange(62,opnarray[39]*8,sendchannel); //OP4 Release Rate
 
     MIDI.sendControlChange(55,opnarray[10]*8,sendchannel); //OP1 2nd Total Level
-    MIDI.sendControlChange(56,opnarray[20]*8,sendchannel); //OP2 2nd Total Level
-    MIDI.sendControlChange(57,opnarray[30]*8,sendchannel); //OP3 2nd Total Level
+    MIDI.sendControlChange(56,opnarray[20]*8,sendchannel); //OP3 2nd Total Level
+    MIDI.sendControlChange(57,opnarray[30]*8,sendchannel); //OP2 2nd Total Level
     MIDI.sendControlChange(58,opnarray[40]*8,sendchannel); //OP4 2nd Total Level
     
     MIDI.sendControlChange(90,opnarray[11]*8,sendchannel); //OP1 SSG-EG
-    MIDI.sendControlChange(91,opnarray[21]*8,sendchannel); //OP2 SSG-EG   
-    MIDI.sendControlChange(92,opnarray[31]*8,sendchannel); //OP3 SSG-EG  
+    MIDI.sendControlChange(91,opnarray[21]*8,sendchannel); //OP3 SSG-EG   
+    MIDI.sendControlChange(92,opnarray[31]*8,sendchannel); //OP2 SSG-EG  
     MIDI.sendControlChange(93,opnarray[41]*8,sendchannel); //OP4 SSG-EG
 
     MIDI.sendControlChange(75,90,sendchannel); //FM Level // A good level of mod
@@ -750,9 +754,10 @@ void tfisend(int opnarray[42], int sendchannel)
     MIDI.sendControlChange(77,127,sendchannel); //Stereo (centered)
 
     MIDI.sendControlChange(70,0,sendchannel); //OP1 Amplitude Modulation (off)
-    MIDI.sendControlChange(71,0,sendchannel); //OP2 Amplitude Modulation (off)
-    MIDI.sendControlChange(72,0,sendchannel); //OP3 Amplitude Modulation (off)
+    MIDI.sendControlChange(71,0,sendchannel); //OP3 Amplitude Modulation (off)
+    MIDI.sendControlChange(72,0,sendchannel); //OP2 Amplitude Modulation (off)
     MIDI.sendControlChange(73,0,sendchannel); //OP4 Amplitude Modulation (off)
+
 
     // Dump TFI settings into the global settings array
     
@@ -760,72 +765,63 @@ void tfisend(int opnarray[42], int sendchannel)
     fmsettings[tfichannel-1][1] = opnarray[1]*16; //Feedback
 
     fmsettings[tfichannel-1][2] = opnarray[2]*8;   //OP1 Multiplier
-    fmsettings[tfichannel-1][12] = opnarray[12]*8; //OP2 Multiplier
-    fmsettings[tfichannel-1][22] = opnarray[22]*8; //OP3 Multiplier
+    fmsettings[tfichannel-1][12] = opnarray[12]*8; //OP3 Multiplier
+    fmsettings[tfichannel-1][22] = opnarray[22]*8; //OP2 Multiplier
     fmsettings[tfichannel-1][32] = opnarray[32]*8; //OP4 Multiplier
 
     fmsettings[tfichannel-1][3] = opnarray[3]*32;   //OP1 Detune
-    fmsettings[tfichannel-1][13] = opnarray[13]*32; //OP2 Detune
-    fmsettings[tfichannel-1][23] = opnarray[23]*32; //OP3 Detune
+    fmsettings[tfichannel-1][13] = opnarray[13]*32; //OP3 Detune
+    fmsettings[tfichannel-1][23] = opnarray[23]*32; //OP2 Detune
     fmsettings[tfichannel-1][33] = opnarray[33]*32; //OP4 Detune
 
     fmsettings[tfichannel-1][4] = 127-opnarray[4];   //OP1 Total Level
-    fmsettings[tfichannel-1][14] = 127-opnarray[14]; //OP2 Total Level
-    fmsettings[tfichannel-1][24] = 127-opnarray[24]; //OP3 Total Level
+    fmsettings[tfichannel-1][14] = 127-opnarray[14]; //OP3 Total Level
+    fmsettings[tfichannel-1][24] = 127-opnarray[24]; //OP2 Total Level
     fmsettings[tfichannel-1][34] = 127-opnarray[34]; //OP4 Total Level
 
     fmsettings[tfichannel-1][5] = opnarray[5]*32;   //OP1 Rate Scaling
-    fmsettings[tfichannel-1][15] = opnarray[15]*32; //OP2 Rate Scaling
-    fmsettings[tfichannel-1][25] = opnarray[25]*32; //OP3 Rate Scaling
+    fmsettings[tfichannel-1][15] = opnarray[15]*32; //OP3 Rate Scaling
+    fmsettings[tfichannel-1][25] = opnarray[25]*32; //OP2 Rate Scaling
     fmsettings[tfichannel-1][35] = opnarray[35]*32; //OP4 Rate Scaling
 
     fmsettings[tfichannel-1][6] = opnarray[6]*4;   //OP1 Attack Rate
-    fmsettings[tfichannel-1][16] = opnarray[16]*4; //OP2 Attack Rate
-    fmsettings[tfichannel-1][26] = opnarray[26]*4; //OP3 Attack Rate
+    fmsettings[tfichannel-1][16] = opnarray[16]*4; //OP3 Attack Rate
+    fmsettings[tfichannel-1][26] = opnarray[26]*4; //OP2 Attack Rate
     fmsettings[tfichannel-1][36] = opnarray[36]*4; //OP4 Attack Rate
 
     fmsettings[tfichannel-1][7] = opnarray[7]*4;   //OP1 1st Decay Rate
-    fmsettings[tfichannel-1][17] = opnarray[17]*4; //OP2 1st Decay Rate
-    fmsettings[tfichannel-1][27] = opnarray[27]*4; //OP3 1st Decay Rate
+    fmsettings[tfichannel-1][17] = opnarray[17]*4; //OP3 1st Decay Rate
+    fmsettings[tfichannel-1][27] = opnarray[27]*4; //OP2 1st Decay Rate
     fmsettings[tfichannel-1][37] = opnarray[37]*4; //OP4 1st Decay Rate
 
     fmsettings[tfichannel-1][8] = opnarray[8]*8;   //OP1 2nd Decay Rate
-    fmsettings[tfichannel-1][18] = opnarray[18]*8; //OP2 2nd Decay Rate
-    fmsettings[tfichannel-1][28] = opnarray[28]*8; //OP3 2nd Decay Rate
+    fmsettings[tfichannel-1][18] = opnarray[18]*8; //OP3 2nd Decay Rate
+    fmsettings[tfichannel-1][28] = opnarray[28]*8; //OP2 2nd Decay Rate
     fmsettings[tfichannel-1][38] = opnarray[38]*8; //OP4 2nd Decay Rate
 
     fmsettings[tfichannel-1][9] = opnarray[9]*8;   //OP1 Release Rate
-    fmsettings[tfichannel-1][19] = opnarray[19]*8; //OP2 Release Rate
-    fmsettings[tfichannel-1][29] = opnarray[29]*8; //OP3 Release Rate
+    fmsettings[tfichannel-1][19] = opnarray[19]*8; //OP3 Release Rate
+    fmsettings[tfichannel-1][29] = opnarray[29]*8; //OP2 Release Rate
     fmsettings[tfichannel-1][39] = opnarray[39]*8; //OP4 Release Rate
 
     fmsettings[tfichannel-1][10] = 127-(opnarray[10]*8); //OP1 2nd Total Level
-    fmsettings[tfichannel-1][20] = 127-(opnarray[20]*8); //OP2 2nd Total Level
-    fmsettings[tfichannel-1][30] = 127-(opnarray[30]*8); //OP3 2nd Total Level
+    fmsettings[tfichannel-1][20] = 127-(opnarray[20]*8); //OP3 2nd Total Level
+    fmsettings[tfichannel-1][30] = 127-(opnarray[30]*8); //OP2 2nd Total Level
     fmsettings[tfichannel-1][40] = 127-(opnarray[40]*8); //OP4 2nd Total Level
 
     fmsettings[tfichannel-1][11] = opnarray[11]*8; //OP1 SSG-EG
-    fmsettings[tfichannel-1][21] = opnarray[21]*8; //OP2 SSG-EG
-    fmsettings[tfichannel-1][31] = opnarray[31]*8; //OP3 SSG-EG
+    fmsettings[tfichannel-1][21] = opnarray[21]*8; //OP3 SSG-EG
+    fmsettings[tfichannel-1][31] = opnarray[31]*8; //OP2 SSG-EG
     fmsettings[tfichannel-1][41] = opnarray[41]*8; //OP4 SSG-EG
     
     fmsettings[tfichannel-1][42] = 90; //FM Level
     fmsettings[tfichannel-1][43] = 127; //AM Level
     fmsettings[tfichannel-1][44] = 127; //Stereo (centered)
     fmsettings[tfichannel-1][45] = 0; //OP1 Amplitude Modulation
-    fmsettings[tfichannel-1][46] = 0; //OP2 Amplitude Modulation
-    fmsettings[tfichannel-1][47] = 0; //OP3 Amplitude Modulation
+    fmsettings[tfichannel-1][46] = 0; //OP3 Amplitude Modulation
+    fmsettings[tfichannel-1][47] = 0; //OP2 Amplitude Modulation
     fmsettings[tfichannel-1][48] = 0; //OP4 Amplitude Modulation
     fmsettings[tfichannel-1][49] = 0; //Patch is unedited
-
-    polypan = 0; // reset secret stereo mode
-    
-    /*
-    // FOR TESTING CHANNEL
-    MIDI.sendNoteOn(60, 127, sendchannel);
-    delay(200);           
-    MIDI.sendNoteOff(60, 0, sendchannel);  
-    */
     
 }
 
@@ -856,8 +852,8 @@ void fmparamdisplay()
       lcd.print(F("01:Alg FB Pan"));
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][0];
-      printspaces(i);
-      lcd.print(i);
+      lcd.print("  ");
+      lcd.print(round(i/16));
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][1];
       printspaces(i);
@@ -878,11 +874,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][14];
+      i = fmsettings[tfichannel-1][24];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][24];
+      i = fmsettings[tfichannel-1][14];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -901,11 +897,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][12];
+      i = fmsettings[tfichannel-1][22];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][22];
+      i = fmsettings[tfichannel-1][12];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -924,11 +920,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][15];
+      i = fmsettings[tfichannel-1][25];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][25];
+      i = fmsettings[tfichannel-1][15];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -947,11 +943,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][13];
+      i = fmsettings[tfichannel-1][23];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][23];
+      i = fmsettings[tfichannel-1][13];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -970,11 +966,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][16];
+      i = fmsettings[tfichannel-1][26];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][26];
+      i = fmsettings[tfichannel-1][16];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -993,11 +989,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][17];
+      i = fmsettings[tfichannel-1][27];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][27];
+      i = fmsettings[tfichannel-1][17];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -1016,11 +1012,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][18];
+      i = fmsettings[tfichannel-1][28];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][28];
+      i = fmsettings[tfichannel-1][18];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -1039,11 +1035,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][20];
+      i = fmsettings[tfichannel-1][30];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][30];
+      i = fmsettings[tfichannel-1][20];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -1062,11 +1058,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][19];
+      i = fmsettings[tfichannel-1][29];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][29];
+      i = fmsettings[tfichannel-1][19];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -1085,11 +1081,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][21];
+      i = fmsettings[tfichannel-1][31];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][31];
+      i = fmsettings[tfichannel-1][21];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -1108,11 +1104,11 @@ void fmparamdisplay()
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(5,1);
-      i = fmsettings[tfichannel-1][46];
+      i = fmsettings[tfichannel-1][47];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(9,1);
-      i = fmsettings[tfichannel-1][47];
+      i = fmsettings[tfichannel-1][46];
       printspaces(i);
       lcd.print(i);
       lcd.setCursor(13,1);
@@ -1165,16 +1161,27 @@ void operatorparamdisplay()
     difference = prevpotvalue[i]-currentpotvalue[i];
     
     // only update the pots and values if the value has changed more than 'difference'
-    if (difference > 1 || difference < -1)
+    if (difference > 2 || difference < -2)
     {
       MIDI.read();
       lcd.setCursor(((i+1)*4)-3,1);
-      if (currentpotvalue[i]<100) lcd.print(F(" "));
-      if (currentpotvalue[i]<10) lcd.print(F(" "));
-      if (currentpotvalue[i]==1) currentpotvalue[i]=0; // flatten that shiz
-      if (currentpotvalue[i]==126) currentpotvalue[i]=127; // max that shiz
-      lcd.print(currentpotvalue[i]);
+      if (currentpotvalue[i]<3) currentpotvalue[i]=0; // flatten that shiz
+      if (currentpotvalue[i]>124) currentpotvalue[i]=127; // max that shiz
       prevpotvalue[i] = currentpotvalue[i];
+
+      // display the new value on screen
+
+      if (fmscreen==1 && i==1) // special case to show algorithm correctly
+      {
+      lcd.print("  ");
+      lcd.print(round(currentpotvalue[i]/16));    
+      }
+      else
+      {
+      printspaces(currentpotvalue[i]);
+      lcd.print(currentpotvalue[i]);  
+      }
+      
 
       // send CC for either mono or poly mode
       if (mode == 2)
@@ -1204,6 +1211,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
 {
     
     // grab the value from the pot that changes, update the array and send midi
+
+    // NOTE I've swapped OP2 and OP3 around here because they were the wrong way around
     
     switch(fmscreen) {
       
@@ -1222,8 +1231,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 2:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][4] = potvalue; MIDI.sendControlChange(16,potvalue,tfichannel);}  //OP1 Total Level
-      if (potnumber==1) {fmsettings[tfichannel-1][14] = potvalue; MIDI.sendControlChange(17,potvalue,tfichannel);} //OP2 Total Level
-      if (potnumber==2) {fmsettings[tfichannel-1][24] = potvalue; MIDI.sendControlChange(18,potvalue,tfichannel);} //OP3 Total Level
+      if (potnumber==1) {fmsettings[tfichannel-1][24] = potvalue; MIDI.sendControlChange(18,potvalue,tfichannel);} //OP2 Total Level
+      if (potnumber==2) {fmsettings[tfichannel-1][14] = potvalue; MIDI.sendControlChange(17,potvalue,tfichannel);} //OP3 Total Level
       if (potnumber==3) {fmsettings[tfichannel-1][34] = potvalue; MIDI.sendControlChange(19,potvalue,tfichannel);} //OP4 Total Level
       break;
     }
@@ -1232,8 +1241,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 3:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][2] = potvalue; MIDI.sendControlChange(20,potvalue,tfichannel);}  //OP1 Multiplier
-      if (potnumber==1) {fmsettings[tfichannel-1][12] = potvalue; MIDI.sendControlChange(21,potvalue,tfichannel);} //OP2 Multiplier
-      if (potnumber==2) {fmsettings[tfichannel-1][22] = potvalue; MIDI.sendControlChange(22,potvalue,tfichannel);} //OP3 Multiplier
+      if (potnumber==1) {fmsettings[tfichannel-1][22] = potvalue; MIDI.sendControlChange(22,potvalue,tfichannel);} //OP2 Multiplier
+      if (potnumber==2) {fmsettings[tfichannel-1][12] = potvalue; MIDI.sendControlChange(21,potvalue,tfichannel);} //OP3 Multiplier
       if (potnumber==3) {fmsettings[tfichannel-1][32] = potvalue; MIDI.sendControlChange(23,potvalue,tfichannel);} //OP4 Multiplier
       break;
     }
@@ -1242,8 +1251,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 4:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][5] = potvalue; MIDI.sendControlChange(39,potvalue,tfichannel);}  //OP1 Rate Scaling
-      if (potnumber==1) {fmsettings[tfichannel-1][15] = potvalue; MIDI.sendControlChange(40,potvalue,tfichannel);} //OP2 Rate Scaling
-      if (potnumber==2) {fmsettings[tfichannel-1][25] = potvalue; MIDI.sendControlChange(41,potvalue,tfichannel);} //OP3 Rate Scaling
+      if (potnumber==1) {fmsettings[tfichannel-1][25] = potvalue; MIDI.sendControlChange(41,potvalue,tfichannel);} //OP2 Rate Scaling
+      if (potnumber==2) {fmsettings[tfichannel-1][15] = potvalue; MIDI.sendControlChange(40,potvalue,tfichannel);} //OP3 Rate Scaling
       if (potnumber==3) {fmsettings[tfichannel-1][35] = potvalue; MIDI.sendControlChange(42,potvalue,tfichannel);} //OP4 Rate Scaling
       break;
     }
@@ -1252,8 +1261,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 5:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][3] = potvalue; MIDI.sendControlChange(24,potvalue,tfichannel);}  //OP1 Detune
-      if (potnumber==1) {fmsettings[tfichannel-1][13] = potvalue; MIDI.sendControlChange(25,potvalue,tfichannel);} //OP2 Detune
-      if (potnumber==2) {fmsettings[tfichannel-1][23] = potvalue; MIDI.sendControlChange(26,potvalue,tfichannel);} //OP3 Detune
+      if (potnumber==1) {fmsettings[tfichannel-1][23] = potvalue; MIDI.sendControlChange(26,potvalue,tfichannel);} //OP2 Detune
+      if (potnumber==2) {fmsettings[tfichannel-1][13] = potvalue; MIDI.sendControlChange(25,potvalue,tfichannel);} //OP3 Detune
       if (potnumber==3) {fmsettings[tfichannel-1][33] = potvalue; MIDI.sendControlChange(27,potvalue,tfichannel);} //OP4 Detune
       break;
     }
@@ -1262,8 +1271,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 6:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][6] = potvalue; MIDI.sendControlChange(43,potvalue,tfichannel);}  //OP1 Attack Rate
-      if (potnumber==1) {fmsettings[tfichannel-1][16] = potvalue; MIDI.sendControlChange(44,potvalue,tfichannel);} //OP2 Attack Rate
-      if (potnumber==2) {fmsettings[tfichannel-1][26] = potvalue; MIDI.sendControlChange(45,potvalue,tfichannel);} //OP3 Attack Rate
+      if (potnumber==1) {fmsettings[tfichannel-1][26] = potvalue; MIDI.sendControlChange(45,potvalue,tfichannel);} //OP2 Attack Rate
+      if (potnumber==2) {fmsettings[tfichannel-1][16] = potvalue; MIDI.sendControlChange(44,potvalue,tfichannel);} //OP3 Attack Rate
       if (potnumber==3) {fmsettings[tfichannel-1][36] = potvalue; MIDI.sendControlChange(46,potvalue,tfichannel);} //OP4 Attack Rate
       break;
     }
@@ -1272,8 +1281,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 7:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][7] = potvalue; MIDI.sendControlChange(47,potvalue,tfichannel);}  //OP1 1st Decay Rate
-      if (potnumber==1) {fmsettings[tfichannel-1][17] = potvalue; MIDI.sendControlChange(48,potvalue,tfichannel);} //OP2 1st Decay Rate
-      if (potnumber==2) {fmsettings[tfichannel-1][27] = potvalue; MIDI.sendControlChange(49,potvalue,tfichannel);} //OP3 1st Decay Rate
+      if (potnumber==1) {fmsettings[tfichannel-1][27] = potvalue; MIDI.sendControlChange(49,potvalue,tfichannel);} //OP2 1st Decay Rate
+      if (potnumber==2) {fmsettings[tfichannel-1][17] = potvalue; MIDI.sendControlChange(48,potvalue,tfichannel);} //OP3 1st Decay Rate
       if (potnumber==3) {fmsettings[tfichannel-1][37] = potvalue; MIDI.sendControlChange(50,potvalue,tfichannel);} //OP4 1st Decay Rate
       break;
     }
@@ -1282,8 +1291,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 8:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][8] = potvalue; MIDI.sendControlChange(51,potvalue,tfichannel);}  //OP1 2nd Decay Rate
-      if (potnumber==1) {fmsettings[tfichannel-1][18] = potvalue; MIDI.sendControlChange(52,potvalue,tfichannel);} //OP2 2nd Decay Rate
-      if (potnumber==2) {fmsettings[tfichannel-1][28] = potvalue; MIDI.sendControlChange(53,potvalue,tfichannel);} //OP3 2nd Decay Rate
+      if (potnumber==1) {fmsettings[tfichannel-1][28] = potvalue; MIDI.sendControlChange(53,potvalue,tfichannel);} //OP2 2nd Decay Rate
+      if (potnumber==2) {fmsettings[tfichannel-1][18] = potvalue; MIDI.sendControlChange(52,potvalue,tfichannel);} //OP3 2nd Decay Rate
       if (potnumber==3) {fmsettings[tfichannel-1][38] = potvalue; MIDI.sendControlChange(54,potvalue,tfichannel);} //OP4 2nd Decay Rate
       break;
     }
@@ -1292,8 +1301,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 9:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][10] = potvalue; MIDI.sendControlChange(59,potvalue,tfichannel);} //OP1 Release Rate
-      if (potnumber==1) {fmsettings[tfichannel-1][20] = potvalue; MIDI.sendControlChange(60,potvalue,tfichannel);} //OP2 Release Rate
-      if (potnumber==2) {fmsettings[tfichannel-1][30] = potvalue; MIDI.sendControlChange(61,potvalue,tfichannel);} //OP3 Release Rate
+      if (potnumber==1) {fmsettings[tfichannel-1][30] = potvalue; MIDI.sendControlChange(61,potvalue,tfichannel);} //OP2 Release Rate
+      if (potnumber==2) {fmsettings[tfichannel-1][20] = potvalue; MIDI.sendControlChange(60,potvalue,tfichannel);} //OP3 Release Rate
       if (potnumber==3) {fmsettings[tfichannel-1][40] = potvalue; MIDI.sendControlChange(62,potvalue,tfichannel);} //OP4 Release Rate
       break;
     }
@@ -1302,8 +1311,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 10:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][9] = potvalue; MIDI.sendControlChange(55,potvalue,tfichannel);} //OP1 2nd Total Level
-      if (potnumber==1) {fmsettings[tfichannel-1][19] = potvalue; MIDI.sendControlChange(56,potvalue,tfichannel);} //OP2 2nd Total Level
-      if (potnumber==2) {fmsettings[tfichannel-1][29] = potvalue; MIDI.sendControlChange(57,potvalue,tfichannel);} //OP3 2nd Total Level
+      if (potnumber==1) {fmsettings[tfichannel-1][29] = potvalue; MIDI.sendControlChange(57,potvalue,tfichannel);} //OP2 2nd Total Level
+      if (potnumber==2) {fmsettings[tfichannel-1][19] = potvalue; MIDI.sendControlChange(56,potvalue,tfichannel);} //OP3 2nd Total Level
       if (potnumber==3) {fmsettings[tfichannel-1][39] = potvalue; MIDI.sendControlChange(58,potvalue,tfichannel);} //OP4 2nd Total Level
       break;
     }
@@ -1312,8 +1321,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 11:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][11] = potvalue; MIDI.sendControlChange(90,potvalue,tfichannel);} //OP1 SSG-EG
-      if (potnumber==1) {fmsettings[tfichannel-1][21] = potvalue; MIDI.sendControlChange(91,potvalue,tfichannel);} //OP2 SSG-EG
-      if (potnumber==2) {fmsettings[tfichannel-1][31] = potvalue; MIDI.sendControlChange(92,potvalue,tfichannel);} //OP3 SSG-EG
+      if (potnumber==1) {fmsettings[tfichannel-1][31] = potvalue; MIDI.sendControlChange(92,potvalue,tfichannel);} //OP2 SSG-EG
+      if (potnumber==2) {fmsettings[tfichannel-1][21] = potvalue; MIDI.sendControlChange(91,potvalue,tfichannel);} //OP3 SSG-EG
       if (potnumber==3) {fmsettings[tfichannel-1][41] = potvalue; MIDI.sendControlChange(93,potvalue,tfichannel);} //OP4 SSG-EG
       break;
     }
@@ -1322,8 +1331,8 @@ void fmccsend(byte potnumber, uint8_t potvalue)
     case 12:
     {
       if (potnumber==0) {fmsettings[tfichannel-1][45] = potvalue; MIDI.sendControlChange(70,potvalue,tfichannel);} //OP1 Amplitude Modulation
-      if (potnumber==1) {fmsettings[tfichannel-1][46] = potvalue; MIDI.sendControlChange(71,potvalue,tfichannel);} //OP2 Amplitude Modulation
-      if (potnumber==2) {fmsettings[tfichannel-1][47] = potvalue; MIDI.sendControlChange(72,potvalue,tfichannel);} //OP3 Amplitude Modulation
+      if (potnumber==1) {fmsettings[tfichannel-1][47] = potvalue; MIDI.sendControlChange(72,potvalue,tfichannel);} //OP2 Amplitude Modulation
+      if (potnumber==2) {fmsettings[tfichannel-1][46] = potvalue; MIDI.sendControlChange(71,potvalue,tfichannel);} //OP3 Amplitude Modulation
       if (potnumber==3) {fmsettings[tfichannel-1][48] = potvalue; MIDI.sendControlChange(73,potvalue,tfichannel);} //OP4 Amplitude Modulation
       break;
     }
