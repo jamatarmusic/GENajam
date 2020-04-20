@@ -94,4 +94,4 @@ version 0.1 - Can load up to 64 TFI instrument files off the root on an SD card 
 
 # Bug List
 - Files load in a strange order, something to do with SDfat
-- I still have a sneaking suspition that OP 2 and OP 3 are the wrong way around...
+- Not sure if all the values of sustain 1 and 2 reflect the correct inversion
