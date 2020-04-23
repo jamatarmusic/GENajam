@@ -749,8 +749,8 @@ void tfisend(int opnarray[42], int sendchannel)
     MIDI.sendControlChange(92,opnarray[31]*8,sendchannel); //OP2 SSG-EG  
     MIDI.sendControlChange(93,opnarray[41]*8,sendchannel); //OP4 SSG-EG
 
-    MIDI.sendControlChange(75,90,sendchannel); //FM Level // A good level of mod
-    MIDI.sendControlChange(76,127,sendchannel); //AM Level // Maxed amp mod
+    MIDI.sendControlChange(75,90,sendchannel); //FM Level // A good level of FM mod
+    MIDI.sendControlChange(76,90,sendchannel); //AM Level // A good level of AM mod
     MIDI.sendControlChange(77,127,sendchannel); //Stereo (centered)
 
     MIDI.sendControlChange(70,0,sendchannel); //OP1 Amplitude Modulation (off)
@@ -815,7 +815,7 @@ void tfisend(int opnarray[42], int sendchannel)
     fmsettings[tfichannel-1][41] = opnarray[41]*8; //OP4 SSG-EG
     
     fmsettings[tfichannel-1][42] = 90; //FM Level
-    fmsettings[tfichannel-1][43] = 127; //AM Level
+    fmsettings[tfichannel-1][43] = 90; //AM Level
     fmsettings[tfichannel-1][44] = 127; //Stereo (centered)
     fmsettings[tfichannel-1][45] = 0; //OP1 Amplitude Modulation
     fmsettings[tfichannel-1][46] = 0; //OP3 Amplitude Modulation
@@ -1101,20 +1101,44 @@ void fmparamdisplay()
       lcd.print(F("12:Amp Mod"));
       lcd.setCursor(1,1);
       i = fmsettings[tfichannel-1][45];
-      printspaces(i);
-      lcd.print(i);
+        if (i<64)
+        {
+          lcd.print("OFF");  
+        }
+        else
+        {
+          lcd.print(" ON");  
+        }
       lcd.setCursor(5,1);
       i = fmsettings[tfichannel-1][47];
-      printspaces(i);
-      lcd.print(i);
+        if (i<64)
+        {
+          lcd.print("OFF");  
+        }
+        else
+        {
+          lcd.print(" ON");  
+        }
       lcd.setCursor(9,1);
       i = fmsettings[tfichannel-1][46];
-      printspaces(i);
-      lcd.print(i);
+        if (i<64)
+        {
+          lcd.print("OFF");  
+        }
+        else
+        {
+          lcd.print(" ON");  
+        }
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][48];
-      printspaces(i);
-      lcd.print(i);
+        if (i<64)
+        {
+          lcd.print("OFF");  
+        }
+        else
+        {
+          lcd.print(" ON");  
+        }
       break;
     }
 
@@ -1176,6 +1200,19 @@ void operatorparamdisplay()
       lcd.print("  ");
       lcd.print(round(currentpotvalue[i]/16));    
       }
+      
+      else if (fmscreen==12) // special case for amp modulation on off
+      {
+        if (currentpotvalue[i]<64)
+        {
+          lcd.print("OFF");  
+        }
+        else
+        {
+          lcd.print(" ON");  
+        }
+      }
+      
       else
       {
       printspaces(currentpotvalue[i]);
