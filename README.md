@@ -88,8 +88,9 @@ version 0.1 - Can load up to 64 TFI instrument files off the root on an SD card 
 5. Add editor mode
 6. Add pages for all editable elements
 7. Add sustain pedal <====
-8. Make FM parameters reflect their proper values 
-7. Add PCM mode in MONO mode
+8. Add region switching in app
+9. Make FM parameters reflect their proper values 
+10. Add PCM mode in MONO mode
 
 # Bug List
 - Files load in a strange order, something to do with SDfat
