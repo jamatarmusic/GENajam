@@ -1,4 +1,4 @@
-// Catskull GENajam v0.91 - JAMATAR 2020
+// Catskull GENajam v0.92 - JAMATAR 2020
 // --------------------
 // This is a front end for Litte-scale's GENMDM module for Mega Drive
 // Currently for: Arduino Leonardo
@@ -16,7 +16,7 @@
 
 //-------------------------------------------
 //LCD pin to Arduino
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+LiquidCrystal lcd(13, 5, 10, 9, 8, 6);
 
 uint8_t lcd_key = 0;
 #define btnRIGHT  0
@@ -72,7 +72,7 @@ uint8_t refreshscreen = 0; // trigger refresh of screen but only once
 //-------------------------------------------
 
 // SD card chip select pin.
-const uint8_t SD_CS_PIN = 3;
+const uint8_t SD_CS_PIN = 11;
 
 SdFat sd;
 SdFile tfifile;
@@ -129,9 +129,9 @@ uint8_t potPin2 = A2; // OP 2
 uint8_t potPin3 = A3; // OP 3
 uint8_t potPin4 = A4; // OP 4
 
-uint8_t buttonPin1 = 13; // Preset / Edit
+uint8_t buttonPin1 = 30; // Preset / Edit
 uint8_t buttonPin2 = 12; // Left
-uint8_t buttonPin3 = 11; // Right
+uint8_t buttonPin3 = 3; // Right
 uint8_t buttonPin4 = A0; // CH Up
 uint8_t buttonPin5 = A5; // CH Down
 uint8_t buttonPin6 = 2; // Mono / Poly
