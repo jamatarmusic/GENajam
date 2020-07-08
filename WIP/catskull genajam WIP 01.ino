@@ -1,4 +1,4 @@
-// Catskull GENajam v0.92 - JAMATAR 2020
+// Catskull GENajam v0.93 - JAMATAR 2020
 // --------------------
 // This is a front end for Litte-scale's GENMDM module for Mega Drive
 // Currently for: Arduino Leonardo
@@ -146,13 +146,13 @@ void setup()
     pinMode(potPin2, INPUT);
     pinMode(potPin3, INPUT);
     pinMode(potPin4, INPUT);
-
-    pinMode(buttonPin1, INPUT); // Mode
-    pinMode(buttonPin2, INPUT); // Left
-    pinMode(buttonPin3, INPUT); // Right
-    pinMode(buttonPin4, INPUT); // CH Up
-    pinMode(buttonPin5, INPUT); // CH Down
-//    pinMode(buttonPin6, INPUT); // Spare
+  
+    pinMode(buttonPin1, INPUT_PULLUP); // Mode
+    pinMode(buttonPin2, INPUT_PULLUP); // Left
+    pinMode(buttonPin3, INPUT_PULLUP); // Right
+    pinMode(buttonPin4, INPUT_PULLUP); // CH Up
+    pinMode(buttonPin5, INPUT_PULLUP); // CH Down
+    pinMode(buttonPin6, INPUT_PULLUP); // Spare
 
     //find out where the pots are
     prevpotvalue[0] = analogRead(potPin1)>>3;
@@ -495,27 +495,27 @@ int read_LCD_buttons() // function for reading the buttons
       }
 */
 
-      if (button01 == HIGH) {         // check if the input is HIGH (button released)
+      if (button01 == LOW) {         // check if the input is LOW
         buttonpushed = millis();
         return btnSELECT;
       }
       
-      if (button02 == HIGH) {         // check if the input is HIGH (button released)
+      if (button02 == LOW) {         // check if the input is LOW
         buttonpushed = millis();
         return btnLEFT;
       }
       
-      if (button03 == HIGH) {         // check if the input is HIGH (button released)
+      if (button03 == LOW) {         // check if the input is LOW
         buttonpushed = millis();
         return btnRIGHT;
       }
 
-      if (button04 == HIGH) {         // check if the input is HIGH (button released)
+      if (button04 == LOW) {         // check if the input is LOW
         buttonpushed = millis();
         return btnUP;
       }
 
-      if (button05 == HIGH) {         // check if the input is HIGH (button released)
+      if (button05 == LOW) {         // check if the input is LOW
         buttonpushed = millis();
         return btnDOWN;
       }
