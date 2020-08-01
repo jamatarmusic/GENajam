@@ -1,97 +1,86 @@
-# GENajam v0.6
+# GENajam v1.00
 Front end editor for GenMDM by Littlescale
 
-A physical front end interface for GenMDM for Mega Drive. This hardware device will allow you to access all FM settings for the 6 channels offered by GenMDM as well as load TFI files from SD card and assign them per channel. Currently supports channels 1-6 for FM. PCM mode is not supported. Saving is not supported at the moment.
+To see an example of what this can do: https://www.youtube.com/watch?v=_nLA5kXui2M
+*This is a live improv GENajam set played over some multi-tracked GENajam recorded material.*
 
-This open source program is written for the Arduino Leonardo or MEGA 2560 rev 3. The pinout is the same on both devices.
+A physical front end interface for GenMDM for Mega Drive built by Catskull Electronics. This hardware device will allow you to access all FM settings for the 6 channels offered by GenMDM as well as load TFI files from SD card and assign them per channel. Currently supports channels 1-6 for FM and has full 6 note Polyphony with last note priority and low note priority. There is also sustain pedal support and the modulation wheel now activates the LFO. This makes it extremely musical to play chords and pads. GENajam will also gives a very piano like velocity curve, allowing the instruments to be played with ease.
 
-Currently uses the LCD Keypad Shield by DFRobot, a standard mini SD card reader and Fourty Seven Effects midi input and output. It will has 4 potentiometers to control your 4 operators.
-
-SD card CS pin goes to pin 3. Other pins go to the ISCP header (the six pins) as shown in the schematic diagram.
-
-Use this guide for the midi inputs and outputs:
-
-https://www.notesandvolts.com/2015/02/midi-and-arduino-build-midi-input.html
-
-https://www.notesandvolts.com/2015/03/midi-for-arduino-build-midi-output.html
-
-For the LCD Keypad shield that I used:
-
-https://wiki.dfrobot.com/Arduino_LCD_KeyPad_Shield__SKU__DFR0009_
-
-
-Uses the following Arduino libraries:
-
-#include <MIDI.h> // Forty Seven Effects Midi Library
-
-#include <SPI.h> // https://www.arduino.cc/en/reference/SPI
-
-#include "SdFat.h" // https://github.com/greiman/SdFat
-
-#include "FreeStack.h" // https://github.com/greiman/SdFat/blob/master/src/FreeStack.h
-
-#include <LiquidCrystal.h> // standard liquid crystal arduino library
-
-There is a folder of sample TFI files that you can test by loading them to the root of an SD card.
+Note: PCM mode is not supported. Saving is not supported at the moment. There is a bug in GENMDM where Decay 2 only works on OP1.
 
 # Instructions
 
-Load the TFI samples under the TFI folder in this GITHUB to the root of an SD card formatted for Arduino. You can currently load 64 files maximum. The INO file is currently set up for an NTSC tuning mode. To change this to PAL tuning mode, edit this line in setup:
-
-```
-MIDI.sendControlChange(83,65,1); // set GENMDM to NTSC
-```
-or
-```
-MIDI.sendControlChange(83,0,1); // set GENMDM to PAL
-```
+There is a folder of sample TFI files that you can test by loading them to the root of an SD card. Load the TFI samples under the TFI folder in this GITHUB to the root of an SD card formatted for Arduino. You can currently load 64 files maximum.
 
 You can find more TFI files here: https://little-scale.blogspot.com/2013/02/all-sega-genesis-mega-drive-tfi.html
 
-The LFO on and off is assigned to MOD WHEEL (CC ch 1). To activate it, first go to the FM editing section, head to Page 13 LFO/FM/AM and dial up pot 3 FM. To turn on AM, go to page 12 Amp Mod and set to 127 on all the operators you want it on, then dial up AM on Page 13.
+GENajam launches in POLY mode, giving you 6 notes of polyphony over channel 1. Press the **LEFT** and **RIGHT** buttons to scroll through the presets.
 
-## MONO | Preset Mode
+## Buttons and Functions
+
+**PRESET / FM EDIT** - This button swaps between preset mode and FM editing mode so you can quickly navigate to a patch and jump into editing it's parameters.
+
+**LEFT AND RIGHT** - These buttons will navigate left and right through presets or FM parameters.
+
+**MONO / POLY** - This button switches between monophonic or polyphonic mode. **Please note**, switching from MONO to POLY mode will **not** overwrite all channels with an instrument file **until you press LEFT or RIGHT**. This is a safety feature in case you have programmed all your channels in MONO mode and accidentally switch to POLY.
+
+**CHANNEL UP AND DOWN** - While in MONO mode in either preset mode or FM edit mode, you can navigate from channels 1 to 6 using these buttons.
+
+**REGION BUTTON** - This unmarked button will switch GENMDM between NTSC or PAL tuning, depending on the region of your Mega Drive or Genesis. Your selected region will be saved into GENajam's EEPROM and restored on start-up.
+
+**OP1, OP2, OP3 and OP4 KNOBS** - These knobs activate when you are in FM EDIT mode. The knobs will not activate unless you start to turn them, so you can scroll through FM parameters while retaining settings. For most parameters, you will have a value of 0 to 127.
+
+**LFO ACTIVATE** - The LFO on and off is assigned to MOD WHEEL (CC ch 1). To change types of LFO, head to Page **13 - LFO/FM/AM** in FM editing. To turn on Amplitude Modulation, go to page **12 - Amp Mod** and set to **ON** on all the operators you want it on, then dial up AM on Page 13.
+
+**STEREO SPREAD MODE** - There is a secret stereo spread poly mode. For each note, left, right or center channel is picked randomly for each key press. This gives a very pleasing stereo spread to pads and epianos. First select a patch in POLY mode. Then press the **PRESET / FM EDIT** button to enter FM editing. Navigate to page **13 - LFO/FM/AM** and twist the OP1 knob to the right until "PAN" appears. This mode remains active until you twist the OP1 knob to the left on page **13 - LFO/FM/AM** and "PAN" disappears.
+
+## MONO Mode
 
 This mode allows you to navigate up and down between the MIDI channels 1 to 6 and forward and backwards through your TFI files from the SD card. Loading a new TFI file completely overwrites the FM settings on that channel.
 
-## MONO | FM Edit
-
 Once a TFI setting has been chosen, enter this mode to edit the raw FM parameters. Up and down navigates the MIDI channels 1 to 6 and left and right scrolls through the parameters. Potentimeters 1-4 control the Operaters 1-4 respectively.
 
-## POLY | Preset Mode
+## POLY Mode
 
 Switching to this mode allows you to load a TFI file to all 6 channels at once and features high and low note priority polyphony. Notes are stolen at random from the center of the chord. When entering this mode, at first, no file will be loaded. Once left or right has been pushed, the TFI file loaded will overwrite all FM settings on all channels.
 
-## POLY | FM Edit
-
 Once a TFI setting has been chosen, enter this mode to edit the raw FM parameters. Left and right scrolls through the parameters. Potentimeters 1-4 control the Operaters 1-4 respectively and affects all 6 channels at once.
 
-# Current state
+## FM editing tips
 
-version 0.6 - Fixed panning and added LFO toggle mapped to the mod wheel. It'll be off by default on the TFI files (as it's not part of the file), so you can activate it using page 12 and 13 of the FM editing section. Read the instructions above for more detail. Great for doing vibrato or adding tremolo to an epiano.
+There is some in-depth reading into the FM parameters of the YM2612 in the Mega Drive on this page:
+https://www.smspower.org/maxim/Documents/YM2612
 
-version 0.5 - Fixed a bunch of broken stuff and made the velocity curve a little nicer to play
+However, if you are slightly familiar with FM editing, here are some quick tips on the implementation in GENajam:
 
-version 0.4 - Added sustain pedal support over polyphony. It mostly works, but it's tricky to track notes across the 6 channels, so sometimes funny things happen. Added in a midi function to pass along pitch bends so that works now too. Also thanks to Impbox for writing a really nice bezier curve velocity formula that I can use to fine tune the playablity of the velocity. GenMDM uses a really linear curve that works for programming, but not so much for playing via a keyboard. The velocity curve brings back some of the "feel" of a synth.
+**Operators and Algorithms** - GENajam lets you edit all 4 operators at once, giving you powerful simultanious access over things such as operator level, frequency multipliers, attack and release very quickly to sculpt your sound live. An important note about the operators in the Mega Drive is that usually OP4 is the **first** operator in the series, unlike a Yamaha Reface DX or Yamaha DX7. This means that when you head into editing, especially in the TL (total level) section, you want to start with OP4 as the first carrier and then work backwards. OP4 is usually the primary oscillator and reducing this operator to 0 will mute the sound.
 
-version 0.3 - Have updated the project to Leonardo and MEGA 2560 for expanded dynamic memory. The program is now fully functional, allowing you to load TFI files to each channel in MONO mode or to all 6 channels at once in POLY mode. You can then go into FM edit mode and start editing the FM patch. Can load 64 TFI files from SD card.
+For example, algorithm 0 will flow like this: OP1 -> OP2 -> OP3 -> OP4
 
-version 0.2 - Can load up to 32 TFI instrument files off the root on an SD card and you can select instruments for channels 1-6 individually. Can switch modes. FM edit mode doesn't work yet. Poly preset mode will load the TFI file to all 6 channels. When in this mode, first enter the mode and then press left or right. This will initialise the loading of the TFI file and overwrite all channels with the TFI on the screen.
+A good way to think of this is that OP4 is the oscilator. Turn down OP1, 2 and 3 and turn up OP4 and you'll hear a pure sine wave. Bring in OP3 and you'll hear OP4 being modulated by OP3. Bring in OP2 and it will modulate OP3 and OP4. Bring in OP1 and you'll have a stack of modulation.
 
-version 0.1 - Can load up to 64 TFI instrument files off the root on an SD card and you can select instruments for channels 1-6 individually.
+Check out the SMSPower page to see all the algorithms.
 
-# Build Roadmap
-1. Read from SD Card
-2. Assign programs to channels
-3. Add screen and navigation 
-4. Add polyphony
-5. Add editor mode
-6. Add pages for all editable elements
-7. Add sustain pedal <====
-8. Add region mode to load off SD card
-9. Make FM parameters reflect their proper values 
-10. Add PCM mode in MONO mode
+**Feedback** - Feedback is only enabled on OP1, so if that operator is turned down, you won't hear anything happening. I find that OP1 has to be at full 127 volume (TL) most of the time.
 
-# Bug List
-- Files load in a strange order, something to do with SDfat
-- Not sure if all the values of sustain 1 and 2 reflect the correct inversion
+**Pan** - The YM2612 only supports hard left, hard right and center pan. Pan at values lower than 32 will simply mute.
+
+**TL or Volume** - This is simply the volume of each operator (and the amount it modulates the operator before it). As I said before, make sure OP4 is cranked as it's usually the oscillator at the start of the chain.
+
+**Multiple** - This is the multiplification factor on the frequency, or a kind of octave selector for the operator. The YM2612 has some nice pitched multipliers, so it's not just like a oscillator tuning amount, it gives you some nice tuning in musical steps.
+
+**Rate Scaling** - This is how much envelope should be scaled as you move up the keyboard. In simple terms, you could have a sound with a slow attack, decay and release and as you play higher up the keyboard, this amount gets shorted.
+
+**Detune** - Honestly, this is so subtle that you might turn this knob and be scratching your head, wondering if it does anything.
+
+**Attack, Decay 1, Decay 2, Release, TL2** - The Yamaha envelope is kinda unique. Attack, Decay and Release are as expected. However, you get a second Decay to play with and TL2 should really be called "Sustain". If you check out the SMSpower page, you'll see a great diagram of the envelope. The values are actually variable angles at each part of the envelope and may behave differently than your standard subtractive synth. For example, a low attack value is actually slow and a high value is fast. Same goes for release and decay. TL2 is just a volume control instead of an angle and annoyingly, the value is subtractive, so a low value means not much drop in volume at sustain and a high amount means lots of drop in volume at sustain. Another un-fun fact is there is a hard-coded bug in GENMDM where Decay 2 across all operators route to OP1. That means Decay 2 is permenantly set to 64 for OP2, OP3 and OP4 and can't be changed.
+
+**SSG-EG** - One of the most unique sections of the YM2612 is the SSG-EG section which basically lets you loop the envelope in interesting ways which almost makes EG section into an amplitude LFO. If means you could have a slow attack and fast release, have the envelope loop into a kind of sawtooth pad. Because the YM2612 is multi-timbral, you can have an looped fake LFO *per note* which is really cool and something that isn't in a lot of synths. There a bit more info here: https://plutiedev.com/ym2612-registers#reg-90
+
+**Amplitude Modulation** - This is off by default on each patch. If you turn AMP MOD on, you'll notice a volume dip. The LFO has to be activate by moving your mod wheel or CC1 above 64.
+
+**LFO/FM/AM** - This section lets you chose the speed of the LFO and the intensity on either frequency modulation (warbly cool stuff) or amplitude modulation (tremelo). The AM section will not do anything until it is switched to "ON" on page 12. If you want only amplitude modulation, make sure you turn down FM to zero.
+
+**VOICES and Polyphony** - The YM2612 is multi-timbral. That means that while in POLY mode it loads all patches and settings across to all 6 channels at once, you can also switch over to MONO mode, set each channel differently, switch back to POLY mode (without pressing left and right) and play all 6 voices which different settings in POLY mode which is really cool. Try load different presets into channels 1 - 6 in MONO mode and then press POLY mode. I wrote the polyphony engine to have random note stealing and have low note priority. This means chords should sound really full if you hold something with the sustain pedal and play a melody over a held chord.
+
+Thanks for checking out my project! You can check out my music at http://www.jamatar.com :)
