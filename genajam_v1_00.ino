@@ -1,7 +1,7 @@
-// GENajam v0.6 - JAMATAR 2020
+// Catskull GENajam v1.00 - JAMATAR 2020
 // --------------------
 // This is a front end for Litte-scale's GENMDM module for Mega Drive
-// Currently for: Arduino MEGA 2640 or Leonardo
+// Currently for: Arduino Leonardo
 // SD card hooks up via the ICSP header pins
 
 #include <MIDI.h>  // Midi Library
@@ -9,10 +9,11 @@
 #include "SdFat.h"
 #include "FreeStack.h"
 #include <LiquidCrystal.h>
+#include <EEPROM.h>
 
 //-------------------------------------------
 //LCD pin to Arduino
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+LiquidCrystal lcd(13, 5, 10, 9, 8, 6);
 
 uint8_t lcd_key = 0;
 #define btnRIGHT  0
@@ -20,7 +21,9 @@ uint8_t lcd_key = 0;
 #define btnDOWN   2
 #define btnLEFT   3
 #define btnSELECT 4
-#define btnNONE   5
+#define btnPOLY   5
+#define btnREGION 6
+#define btnNONE   7
 
 byte emojichannel[] = {
   B01110,
@@ -44,7 +47,6 @@ byte emojiprogram[] = {
   B00101
 };
 
-
 byte emojipoly[] = {
   B11100,
   B10100,
@@ -62,13 +64,13 @@ byte emojipoly[] = {
 unsigned long buttonpushed = 0;      // when a button is pushed, mark what millis it was pushed
 const uint16_t debouncedelay = 200;   //the debounce time which user sets prior to run
 unsigned long messagestart = 0; // when a message starts, mark what millis it displayed at
-const uint16_t messagedelay = 1000; // how long to display messages for
+const uint16_t messagedelay = 700; // how long to display messages for
 uint8_t refreshscreen = 0; // trigger refresh of screen but only once
 
 //-------------------------------------------
 
 // SD card chip select pin.
-const uint8_t SD_CS_PIN = 3;
+const uint8_t SD_CS_PIN = 11;
 
 SdFat sd;
 SdFile tfifile;
@@ -96,12 +98,14 @@ char tfifilenumber[6] = {0, 0, 0, 0, 0, 0};
 //set the initial midi channel
 uint8_t tfichannel=1;
 
-// switch between settings
-uint8_t mode=1;
+// switch between settings (start in poly mode)
+uint8_t mode=3;
 // 1) mono presets
 // 2) mono fm settings
 // 3) poly presets
 // 4) poly fm settings
+
+uint8_t region = EEPROM.read(0); // check the eeprom for the region: region 0 = ntsc, region 1 = pal;
 
 // polyphony settings
 uint8_t polynote[6] = {0, 0, 0, 0, 0, 0}; // what note is in each channel
@@ -120,21 +124,37 @@ uint8_t lfospeed=64;
 uint8_t polypan=64;
 uint8_t polyvoicenum=6;
 
-uint8_t potPin1 = A1;
-uint8_t potPin2 = A2;
-uint8_t potPin3 = A3;
-uint8_t potPin4 = A4;
+uint8_t potPin1 = A1; // OP 1
+uint8_t potPin2 = A2; // OP 2
+uint8_t potPin3 = A3; // OP 3
+uint8_t potPin4 = A4; // OP 4
+
+uint8_t buttonPin1 = 30; // Preset / Edit
+uint8_t buttonPin2 = 12; // Left
+uint8_t buttonPin3 = 4; // Right
+uint8_t buttonPin4 = A5; // CH Up
+uint8_t buttonPin5 = A0; // CH Down
+uint8_t buttonPin6 = 2; // Mono / Poly
+uint8_t buttonPin7 = 3; // Region
 
 uint8_t prevpotvalue[4]; // recorded last potentiometer values
 
 void setup()
 {
     
-    //setup the input pots
+    //setup the inputs
     pinMode(potPin1, INPUT);
     pinMode(potPin2, INPUT);
     pinMode(potPin3, INPUT);
     pinMode(potPin4, INPUT);
+  
+    pinMode(buttonPin1, INPUT_PULLUP); // Preset / Edit
+    pinMode(buttonPin2, INPUT_PULLUP); // Left
+    pinMode(buttonPin3, INPUT_PULLUP); // Right
+    pinMode(buttonPin4, INPUT_PULLUP); // CH Up
+    pinMode(buttonPin5, INPUT_PULLUP); // CH Down
+    pinMode(buttonPin6, INPUT_PULLUP); // Mono / Poly
+    pinMode(buttonPin7, INPUT_PULLUP); // Region
 
     //find out where the pots are
     prevpotvalue[0] = analogRead(potPin1)>>3;
@@ -148,12 +168,11 @@ void setup()
     lcd.createChar(1, emojiprogram);
     lcd.createChar(2, emojipoly);
 
-
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("JamaGEN START!");
     lcd.setCursor(0,1);
-    lcd.print("version 0.6");
+    lcd.print("version 1.00");
 
     delay(500);
   
@@ -165,10 +184,7 @@ void setup()
     if (!sd.begin(SD_CS_PIN, SD_SCK_MHZ(50))) {
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print(F("ERROR:"));
-      lcd.setCursor(0,1);
-      lcd.print(F("CANNOT FIND SD"));
-      sd.initErrorHalt();
+      lcd.print("CANNOT FIND SD");
     }
 
   MIDI.begin(MIDI_CHANNEL_OMNI); // read all channels
@@ -179,20 +195,21 @@ void setup()
   MIDI.setHandleControlChange(MyHandleCC);
   MIDI.setHandlePitchBend(MyHandlePitchbend);
 
-  // ========================================================= SET REGION HERE
-
-  MIDI.sendControlChange(83,1,1); // set GENMDM to PAL
-  //MIDI.sendControlChange(83,75,1); // set GENMDM to NTSC
-
-  // ========================================================= SET REGION HERE
+  // SET REGION HERE
+  if (region==0)
+  {
+    MIDI.sendControlChange(83,75,1); // set GENMDM to NTSC  
+  }
+  else
+  {
+    MIDI.sendControlChange(83,1,1); // set GENMDM to PAL  
+  }
+  
 
  // List files in root directory and get max file number
   if (!dirFile.open("/", O_RDONLY)) {
       lcd.setCursor(0,0);
-      lcd.print(F("ERROR:"));
-      lcd.setCursor(0,1);
-      lcd.print(F("NO ROOT DIR"));
-      sd.errorHalt(F("open root failed"));
+      lcd.print("NO ROOT DIR");
   }
   while (n < nMax && tfifile.openNext(&dirFile, O_RDONLY)) {
 
@@ -216,7 +233,6 @@ void setup()
   tfichannel=i;
   tfiselect();
   }
-
   
 } // void setup
 
@@ -233,7 +249,7 @@ MIDI.read();
   
   switch(mode) {
   
-  //======================================================= MODE 1
+  //======================================================= MODE 1 - MONO / PRESET
   case 1:
   {
       switch (lcd_key) // depending on which button was pushed, we perform an action
@@ -280,7 +296,19 @@ MIDI.read();
       
       case btnSELECT:
       {
-      modechange();
+      modechange(1);
+      break;
+      }
+
+      case btnPOLY:
+      {
+      modechange(2);
+      break;
+      }
+
+      case btnREGION:
+      {
+      regionchange();
       break;
       }
       
@@ -290,7 +318,7 @@ MIDI.read();
   }
   
   
-  //======================================================= MODE 2
+  //======================================================= MODE 2 - MONO / EDIT
   case 2:
   {
       
@@ -334,7 +362,19 @@ MIDI.read();
       
       case btnSELECT:
       {
-      modechange();
+      modechange(1);
+      break;
+      }
+
+      case btnPOLY:
+      {
+      modechange(2);
+      break;
+      }
+
+      case btnREGION:
+      {
+      regionchange();
       break;
       }
       
@@ -346,7 +386,7 @@ MIDI.read();
   }
 
 
-  //======================================================= MODE 3
+  //======================================================= MODE 3 - POLY / PRESET
   case 3:
   {
       switch (lcd_key) // depending on which button was pushed, we perform an action
@@ -361,7 +401,7 @@ MIDI.read();
       for (int i = 1; i <= 5; i++) {
         tfifilenumber[i] = tfifilenumber[0];
       }
-      for (int i = 1; i <= 6; i++) {
+      for (int i = 6; i >= 1; i--) {
         tfichannel=i;
         tfiselect();
       }      
@@ -378,7 +418,7 @@ MIDI.read();
       for (int i = 1; i <= 5; i++) {
         tfifilenumber[i] = tfifilenumber[0];
       }
-      for (int i = 1; i <= 6; i++) {
+      for (int i = 6; i >= 1; i--) {
         tfichannel=i;
         tfiselect();
       }    
@@ -386,8 +426,20 @@ MIDI.read();
       }
       
       case btnSELECT:
-      {  
-      modechange();
+      {
+      modechange(1);
+      break;
+      }
+
+      case btnPOLY:
+      {
+      modechange(2);
+      break;
+      }
+
+      case btnREGION:
+      {
+      regionchange();
       break;
       }
       
@@ -396,7 +448,7 @@ MIDI.read();
   break;  
   }
 
-  //======================================================= MODE 4
+  //======================================================= MODE 4 / POLY / EDIT
   case 4:
   {
       
@@ -420,7 +472,19 @@ MIDI.read();
       
       case btnSELECT:
       {
-      modechange();
+      modechange(1);
+      break;
+      }
+
+      case btnPOLY:
+      {
+      modechange(2);
+      break;
+      }
+
+      case btnREGION:
+      {
+      regionchange();
       break;
       }
       
@@ -439,46 +503,60 @@ MIDI.read();
 
 int read_LCD_buttons() // function for reading the buttons
 {
-  uint16_t adc_key_in = 0;
-  adc_key_in = analogRead(0);      // read the value from the sensor
+    
+  bool button01 = 0; // Preset / Edit
+  bool button02 = 0; // Left
+  bool button03 = 0; // Right
+  bool button04 = 0; // CH Up
+  bool button05 = 0; // CH Down
+  bool button06 = 0; // Mono / Poly
+  bool button07 = 0; // Region
+    
+  button01 = digitalRead(buttonPin1);  // read input value
+  button02 = digitalRead(buttonPin2);  // read input value
+  button03 = digitalRead(buttonPin3);  // read input value
+  button04 = digitalRead(buttonPin4);  // read input value
+  button05 = digitalRead(buttonPin5);  // read input value
+  button06 = digitalRead(buttonPin6);  // read input value
+  button07 = digitalRead(buttonPin7);  // read input value
   
-  if (adc_key_in > 1000) {
-  return btnNONE;
-  }
   
     if ((millis() - buttonpushed) > debouncedelay) {    // only register a new button push if no button has been pushed in debouncedelay millis
 
-      // you're going to want to customise this depending on the LCD sheild you have
-      // check your button min / max analog read values by running and LCD sheild keypad test
 
-      // 0 - 57 (0)
-      if (adc_key_in > 0 && adc_key_in < 88) {
-      buttonpushed = millis();  
-      return btnRIGHT;
+      if (button01 == LOW) {         // check if the input is LOW
+        buttonpushed = millis();
+        return btnSELECT;
+      }
+      
+      if (button02 == LOW) {         // check if the input is LOW
+        buttonpushed = millis();
+        return btnLEFT;
+      }
+      
+      if (button03 == LOW) {         // check if the input is LOW
+        buttonpushed = millis();
+        return btnRIGHT;
       }
 
-      // 97 - 157 (99)
-      if (adc_key_in > 98 && adc_key_in < 103) {
-      buttonpushed = millis();  
-      return btnUP;
+      if (button04 == LOW) {         // check if the input is LOW
+        buttonpushed = millis();
+        return btnUP;
       }
 
-      // 254 - 271 (255)
-      if (adc_key_in > 254 && adc_key_in < 258) {
-      buttonpushed = millis();  
-      return btnDOWN;
+      if (button05 == LOW) {         // check if the input is LOW
+        buttonpushed = millis();
+        return btnDOWN;
       }
 
-      // 404 - 423 (408)
-      if (adc_key_in > 404 && adc_key_in < 418) {
-      buttonpushed = millis();  
-      return btnLEFT;
+      if (button06 == LOW) {         // check if the input is LOW
+        buttonpushed = millis();
+        return btnPOLY;
       }
 
-      // 629 - 647 (638)
-      if (adc_key_in > 636 && adc_key_in < 642) {
-      buttonpushed = millis();  
-      return btnSELECT;
+      if (button07 == LOW) {         // check if the input is LOW
+        buttonpushed = millis();
+        return btnREGION;
       }
     
     }
@@ -487,36 +565,70 @@ int read_LCD_buttons() // function for reading the buttons
 
 }
 
-void modechange() // when the mode button is changed, cycle the modes
+void modechange(int modetype) // when the mode buttons are changed, cycle the modes
 {
-  mode++;
-  if(mode > 4) mode = 1; // loop mode
+
+  // modetype 1 = edit / preset cycle
+  // modetype 2 = mono / poly cycle
+
+  // if a user just presses the edit / preset button, don't display anything on the screen on change
+  bool quickswitch=0;
+
+  // mono preset options  
+  if (mode==1 && modetype==1) {mode=2; quickswitch=1;}
+  else if (mode==1 && modetype==2) mode=3;
+
+  // mono edit options  
+  else if (mode==2 && modetype==1) {mode=1; quickswitch=1;}
+  else if (mode==2 && modetype==2) mode=4;
+
+  // poly preset options  
+  else if (mode==3 && modetype==1) {mode=4; quickswitch=1;}
+  else if (mode==3 && modetype==2) mode=1;
+
+  // poly edit options  
+  else if (mode==4 && modetype==1) {mode=3; quickswitch=1;}
+  else if (mode==4 && modetype==2) mode=2;
+  
 
   switch(mode){
     case 1:
     {
       messagestart = millis();
       lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("1 MONO | Preset");
-      refreshscreen=1;
+      if(quickswitch==0)
+      {
+        lcd.setCursor(0,0);
+        lcd.print("MONO | Preset");
+        refreshscreen=1;
+      }
+      else
+      {
+        channelselect();  
+      }
       break;
     }
     
     case 2:
     {
-      messagestart = millis();
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("2 MONO | FM Edit");
       // find out where the pots are
       prevpotvalue[0] = analogRead(potPin1)>>3;
       prevpotvalue[1] = analogRead(potPin2)>>3;
       prevpotvalue[2] = analogRead(potPin3)>>3;
       prevpotvalue[3] = analogRead(potPin4)>>3;
-
       
-      refreshscreen=1;
+      messagestart = millis();
+      lcd.clear();
+      if(quickswitch==0)
+      {
+        lcd.setCursor(0,0);
+        lcd.print("MONO | FM Edit");  
+        refreshscreen=1;
+      }
+      else
+      {
+        fmparamdisplay();
+      }
       break;
     }
     
@@ -524,28 +636,74 @@ void modechange() // when the mode button is changed, cycle the modes
     {
       messagestart = millis();
       lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("3 POLY | Preset");
-      refreshscreen=1;
+      if(quickswitch==0)
+      {
+        lcd.setCursor(0,0);
+        lcd.print("POLY | Preset"); 
+        refreshscreen=1;
+      }
+      else
+      {
+        channelselect();
+      }
       break;
     }
 
     case 4:
     {
-      messagestart = millis();
-      lcd.clear();
-      lcd.setCursor(0,0);
-      lcd.print("4 POLY | FM Edit");
       // find out where the pots are
       prevpotvalue[0] = analogRead(potPin1)>>3;
       prevpotvalue[1] = analogRead(potPin2)>>3;
       prevpotvalue[2] = analogRead(potPin3)>>3;
       prevpotvalue[3] = analogRead(potPin4)>>3;
-      refreshscreen=1;
+      
+      messagestart = millis();
+      lcd.clear();
+      if(quickswitch==0)
+      {
+        lcd.setCursor(0,0);
+        lcd.print("POLY | FM Edit");
+        refreshscreen=1;  
+      }
+      else
+      {
+        fmparamdisplay();  
+      }
       break;
     }
     
   } // switch
+}
+
+void regionchange()
+{
+  // increment the button
+  if (region==0) 
+  {region=1;}
+  else 
+  {region=0;}
+
+  // now send the CC, display message and record to EEPROM
+  if (region==0)
+  {
+    messagestart = millis();
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("REGION | NTSC");
+    refreshscreen=1;  
+    MIDI.sendControlChange(83,75,1); // set GENMDM to NTSC
+    EEPROM.write(0, 0);
+  }
+  else
+  {
+    messagestart = millis();
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("REGION | PAL");
+    refreshscreen=1;  
+    MIDI.sendControlChange(83,1,1); // set GENMDM to PAL
+    EEPROM.write(0, 1);
+  }
 }
 
 void modechangemessage() // display temporary message
@@ -591,10 +749,7 @@ void tfiselect() //load a tfi , send the midi, update screen
     if (!tfifile.open(&dirFile, dirIndex[tfifilenumber[tfichannel-1]], O_RDONLY)) {
       lcd.clear();
       lcd.setCursor(0,0);
-      lcd.print("ERROR:");
-      lcd.setCursor(0,1);
       lcd.print("CANNOT READ TFI ");
-      sd.errorHalt(F("open"));
     }
 
     // open TFI file and read/send contents =================
@@ -621,17 +776,17 @@ void tfiselect() //load a tfi , send the midi, update screen
     lcd.setCursor(0,0);
     if (mode==3) {  
       lcd.write(byte(2));
-      lcd.print(F(" "));     
+      lcd.print(" ");     
     }
     else {
       lcd.write(byte(0));
       lcd.print(tfichannel);  
     }
-    lcd.print(F(" "));
+    lcd.print(" ");
     lcd.write(byte(1));
     printzeros(tfifilenumber[tfichannel-1]+1);
     lcd.print(tfifilenumber[tfichannel-1]+1);
-    lcd.print(F("/"));
+    lcd.print("/");
     printzeros(n);
     lcd.print(n);
     lcd.setCursor(0,1);
@@ -649,10 +804,7 @@ void channelselect() //select a new channel, display current tfi on screen
 {
     if (!tfifile.open(&dirFile, dirIndex[tfifilenumber[tfichannel-1]], O_RDONLY)) {
       lcd.setCursor(0,0);
-      lcd.print("ERROR:");
-      lcd.setCursor(0,1);
       lcd.print("CANNOT READ TFI");
-      sd.errorHalt(F("open"));
   }
 
      //get filename
@@ -665,17 +817,17 @@ void channelselect() //select a new channel, display current tfi on screen
     lcd.setCursor(0,0);
     if (mode==3) {  
       lcd.write(byte(2));
-      lcd.print(F(" "));     
+      lcd.print(" ");     
     }
     else {
       lcd.write(byte(0));
       lcd.print(tfichannel);  
     }
-    lcd.print(F(" "));
+    lcd.print(" ");
     lcd.write(byte(1));
     printzeros(tfifilenumber[tfichannel-1]+1);
     lcd.print(tfifilenumber[tfichannel-1]+1);
-    lcd.print(F("/"));
+    lcd.print("/");
     printzeros(n);
     lcd.print(n);
     lcd.setCursor(0,1);
@@ -1147,6 +1299,13 @@ void fmparamdisplay()
     {
       lcd.print(F("13:LFO/FM/AM"));
       lcd.setCursor(5,1);
+      
+      if (polypan>64) // show pan mode enabled
+      {
+        lcd.setCursor(1,1);
+        lcd.print(F("PAN"));
+      }
+      
       i = lfospeed;
       printspaces(i);
       lcd.print(i);
@@ -1227,12 +1386,11 @@ void operatorparamdisplay()
       }
       else
       {
-        for (int c = 1; c <=6; c++) {
+        for (int c = 6; c >=1; c--) {
           tfichannel=c;
           fmccsend(i, currentpotvalue[i]);
         }
       }
-      
       
     }
     else
@@ -1248,7 +1406,6 @@ void fmccsend(byte potnumber, uint8_t potvalue)
 {
     
     // grab the value from the pot that changes, update the array and send midi
-
     // NOTE I've swapped OP2 and OP3 around here because they were the wrong way around
     
     switch(fmscreen) {
@@ -1537,7 +1694,7 @@ void MyHandleCC(byte channel, byte number, byte value) {
     if (value==0) // if sustain pedal is in off state
     {
       sustain=0;
-      for (int i = 0; i <= 5; i++) // scan for sustained channels
+      for (int i = 5; i >= 0; i--) // scan for sustained channels
       {
         MIDI.read();
         if (noteheld[i]==0) // if the key is not currently being pushed
@@ -1564,11 +1721,12 @@ void MyHandleCC(byte channel, byte number, byte value) {
   
 } // void cc
 
+
 void MyHandlePitchbend(byte channel, int bend)
 {
   if (mode==3 || mode==4) // if we're in poly mode
   {    
-    for (int i = 0; i <= 5; i++) // send for all channels
+    for (int i = 5; i >= 0; i--) // send for all channels
     {
       MIDI.sendPitchBend(bend, i+1);
       MIDI.read();
