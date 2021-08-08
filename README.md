@@ -1,6 +1,10 @@
 # GENajam v1.00
 Front end editor for GenMDM by Littlescale
 
+note: v1.10 is coming very soon! it supports patch saving and more!
+
+Overview video: https://www.youtube.com/watch?v=uE3FbmMKl-U
+
 To see an example of what this can do: https://www.youtube.com/watch?v=_nLA5kXui2M
 *This is a live improv GENajam set played over some multi-tracked GENajam recorded material.*
 
