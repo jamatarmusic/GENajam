@@ -1,16 +1,15 @@
-# GENajam v1.00
+# GENajam v1.10
 Front end editor for GenMDM by Littlescale
 
-note: v1.10 is coming very soon! it supports patch saving and more!
-
 Overview video: https://www.youtube.com/watch?v=uE3FbmMKl-U
+Connection guide (and history): https://www.youtube.com/watch?v=WcB8032SWHI
 
 To see an example of what this can do: https://www.youtube.com/watch?v=_nLA5kXui2M
 *This is a live improv GENajam set played over some multi-tracked GENajam recorded material.*
 
 A physical front end interface for GenMDM for Mega Drive built by Catskull Electronics. This hardware device will allow you to access all FM settings for the 6 channels offered by GenMDM as well as load TFI files from SD card and assign them per channel. Currently supports channels 1-6 for FM and has full 6 note Polyphony with last note priority and low note priority. There is also sustain pedal support and the modulation wheel now activates the LFO. This makes it extremely musical to play chords and pads. GENajam will also gives a very piano like velocity curve, allowing the instruments to be played with ease.
 
-Note: PCM mode is not supported. Saving is not supported at the moment. There is a bug in GENMDM where Decay 2 only works on OP1.
+Note: PCM mode switching is not supported by Genajam but can be still enabled in MONO mode. There is a bug in GENMDM where Decay 2 only works on OP1.
 
 # Instructions
 
@@ -22,21 +21,29 @@ GENajam launches in POLY mode, giving you 6 notes of polyphony over channel 1. P
 
 ## Buttons and Functions
 
+Note, these buttons refer to the v1.10 firmware.
+
 **PRESET / FM EDIT** - This button swaps between preset mode and FM editing mode so you can quickly navigate to a patch and jump into editing it's parameters.
 
 **LEFT AND RIGHT** - These buttons will navigate left and right through presets or FM parameters.
 
 **MONO / POLY** - This button switches between monophonic or polyphonic mode. **Please note**, switching from MONO to POLY mode will **not** overwrite all channels with an instrument file **until you press LEFT or RIGHT**. This is a safety feature in case you have programmed all your channels in MONO mode and accidentally switch to POLY.
 
-**CHANNEL UP AND DOWN** - While in MONO mode in either preset mode or FM edit mode, you can navigate from channels 1 to 6 using these buttons.
+**UP AND DOWN - IN POLY** - While in POLY mode, these buttons will enter the **SAVE MENU** giving the option to push **up** to overwrite the current patch or **down** to save the patch as a new file. The new patch will be named "newpatch###.tfi" and will count up sequencially. To rename patches, insert your sd card into a computer. To cancel out of the **SAVE MENU**, push the left, right or preset/fm edit button.
 
-**REGION BUTTON** - This unmarked button will switch GENMDM between NTSC or PAL tuning, depending on the region of your Mega Drive or Genesis. Your selected region will be saved into GENajam's EEPROM and restored on start-up.
+**DELETE BUTTON** - This unmarked button will give you a prompt to delete a patch. This cannot be undone. Press again to confirm or cancel by pressing the left, right or preset/fm edit button.
+
+**UP AND DOWN - IN MONO** - While in MONO mode in either preset mode or FM edit mode, you can navigate from channels 1 to 6 using these buttons.
 
 **OP1, OP2, OP3 and OP4 KNOBS** - These knobs activate when you are in FM EDIT mode. The knobs will not activate unless you start to turn them, so you can scroll through FM parameters while retaining settings. For most parameters, you will have a value of 0 to 127.
 
 **LFO ACTIVATE** - The LFO on and off is assigned to MOD WHEEL (CC ch 1). To change types of LFO, head to Page **13 - LFO/FM/AM** in FM editing. To turn on Amplitude Modulation, go to page **12 - Amp Mod** and set to **ON** on all the operators you want it on, then dial up AM on Page 13.
 
-**STEREO SPREAD MODE** - There is a secret stereo spread poly mode. For each note, left, right or center channel is picked randomly for each key press. This gives a very pleasing stereo spread to pads and epianos. First select a patch in POLY mode. Then press the **PRESET / FM EDIT** button to enter FM editing. Navigate to page **13 - LFO/FM/AM** and twist the OP1 knob to the right until "PAN" appears. This mode remains active until you twist the OP1 knob to the left on page **13 - LFO/FM/AM** and "PAN" disappears.
+**STEREO SPREAD MODE** - There is a stereo spread poly mode. For each note, left, right or center channel is picked randomly for each key press. This gives a very pleasing stereo spread to pads and epianos. First select a patch in POLY mode. Then press the **PRESET / FM EDIT** button to enter FM editing. Navigate to page **13 - LFO/FM/AM** and twist the OP1 knob to the right until "PAN" appears. This mode remains active until you twist the OP1 knob to the left on page **13 - LFO/FM/AM** and "PAN" disappears.
+
+## Boot menu
+
+New to v1.10, to access the boot menu, start with your Genajam unplugged. Hold down the **Preset / FM Edit** button and plug in the USB-C cable. Continue to hold down the button until "MIDI CH / REGION" appears on the screen. The settings will snap to whatever the knobs are set to. Choose your MIDI CHANNEL (for using POLY mode) using the OP1 knob and choose your REGION using the OP4 knob. Push the left, right or preset/fm edit button to save the settings to EEPROM. These settings will be remembered even after the unit is reset or turned off.
 
 ## MONO Mode
 
