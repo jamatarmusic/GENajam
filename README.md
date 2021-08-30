@@ -29,7 +29,7 @@ The correct order of plugging is:
 
 When you go to turn on your Mega Drive later, turn on Genajam **after** the Mega Drive is turned on.
 
-GENajam launches in POLY mode, giving you 6 notes of polyphony over channel 1. Press the **LEFT** and **RIGHT** buttons to scroll through the presets.
+GENajam launches in POLY mode, giving you 6 notes of polyphony over the channel you choose in the boot menu (default channel 1). Press the **LEFT** and **RIGHT** buttons to scroll through the presets.
 
 ## Buttons and Functions
 
