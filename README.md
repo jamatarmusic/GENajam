@@ -42,7 +42,7 @@ Note, these buttons refer to the v1.10 firmware.
 
 **LFO ACTIVATE** - The LFO on and off is assigned to MOD WHEEL (CC ch 1). To change types of LFO, head to Page **13 - LFO/FM/AM** in FM editing. To turn on Amplitude Modulation, go to page **12 - Amp Mod** and set to **ON** on all the operators you want it on, then dial up AM on Page 13.
 
-**STEREO SPREAD MODE** - There is a stereo spread poly mode. For each note, left, right or center channel is picked randomly for each key press. This gives a very pleasing stereo spread to pads and epianos. First select a patch in POLY mode. Then press the **PRESET / FM EDIT** button to enter FM editing. Navigate to page **13 - LFO/FM/AM** and twist the OP1 knob to the right until "PAN" appears. This mode remains active until you twist the OP1 knob to the left on page **13 - LFO/FM/AM** and "PAN" disappears.
+**STEREO SPREAD MODE** - There is a stereo spread poly mode on PAGE 01 of FM edit mode. For each note, left, right or center channel is picked randomly for each key press. This gives a very pleasing stereo spread to pads and epianos. First select a patch in POLY mode. Then press the **PRESET / FM EDIT** button to enter FM editing. Navigate to page **01:Alg FB Pan**. The OP1 knob will switch the spread icon from OFF to ON.
 
 ## Boot menu
 
