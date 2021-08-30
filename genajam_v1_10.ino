@@ -1,4 +1,4 @@
-// Catskull GENajam v1.00 - JAMATAR 2020
+// Catskull GENajam v1.10 - JAMATAR 2021-AUGUST
 // --------------------
 // This is a front end for Litte-scale's GENMDM module for Mega Drive
 // Currently for: MightyCore ATMega1284
@@ -22,7 +22,7 @@ uint8_t lcd_key = 0;
 #define btnLEFT   3
 #define btnSELECT 4
 #define btnPOLY   5
-#define btnREGION 6
+#define btnBLANK 6
 #define btnNONE   7
 
 byte emojichannel[] = {
@@ -102,6 +102,17 @@ byte emojistereoright[] = {
   B00000
 };
 
+byte emojipolyon[] = {
+  B00011,
+  B01011,
+  B00011,
+  B01111,
+  B11010,
+  B01010,
+  B01101,
+  B00101
+};
+
 
 //debouncing
 
@@ -126,7 +137,7 @@ const uint8_t MaxNumberOfChars = 17; // only show 16 characters coz LCD
 uint16_t n = 0;
 
 // How many files to handle
-const uint16_t nMax = 64;
+const uint16_t nMax = 999;
 
 // Position of file's directory entry.
 uint16_t dirIndex[nMax];
@@ -151,6 +162,7 @@ uint8_t mode=3;
 // 4) poly fm settings
 
 uint8_t region = EEPROM.read(0); // check the eeprom for the region: region 0 = ntsc, region 1 = pal;
+uint8_t midichannel = EEPROM.read(1); // check the eeprom for the midi channel
 
 // polyphony settings
 uint8_t polynote[6] = {0, 0, 0, 0, 0, 0}; // what note is in each channel
@@ -159,6 +171,7 @@ bool sustainon[6] = {0, 0, 0, 0, 0, 0}; // what channels are sustained
 bool noteheld[6] = {0, 0, 0, 0, 0, 0}; // what notes are currently held down
 uint8_t lowestnote = 0; // don't steal the lowest note
 bool sustain = 0; // is the pedal on
+uint8_t notecounter = 0; //use this to quickly count notes
 
 // fm parameter screen navigation
 uint8_t fmscreen=1;
@@ -169,11 +182,11 @@ uint8_t lfospeed=64;
 uint8_t polypan=64;
 uint8_t polyvoicenum=6;
 
+// knobs and buttons
 uint8_t potPin1 = PIN_PA3; // OP 1
 uint8_t potPin2 = PIN_PA2; // OP 2
 uint8_t potPin3 = PIN_PA1; // OP 3
 uint8_t potPin4 = PIN_PA0; // OP 4
-
 uint8_t buttonPin1 = PIN_PC2; // Preset / Edit
 uint8_t buttonPin2 = PIN_PC1; // Left
 uint8_t buttonPin3 = PIN_PC3; // Right
@@ -181,12 +194,23 @@ uint8_t buttonPin4 = PIN_PC7; // CH Up
 uint8_t buttonPin5 = PIN_PC4; // CH Down
 uint8_t buttonPin6 = PIN_PC5; // Mono / Poly
 uint8_t buttonPin7 = PIN_PC6; // Region
-
 uint8_t prevpotvalue[4]; // recorded last potentiometer values
+bool menuprompt = 1; // for when a menu has to pause, 0 means in a menu
+bool booted = 0; // for knowing if genajam just turned on
+
+//save file variables
+uint16_t savenumber = 1; //start files from number 1
+char savefilefull[] = "newpatch001.tfi"; //we are going to add the number later after we scan the SD card
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// THE SETUP
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void setup()
 {
-    
+
     //setup the inputs
     pinMode(potPin1, INPUT);
     pinMode(potPin2, INPUT);
@@ -199,7 +223,7 @@ void setup()
     pinMode(buttonPin4, INPUT_PULLUP); // CH Up
     pinMode(buttonPin5, INPUT_PULLUP); // CH Down
     pinMode(buttonPin6, INPUT_PULLUP); // Mono / Poly
-    pinMode(buttonPin7, INPUT_PULLUP); // Region
+    pinMode(buttonPin7, INPUT_PULLUP); // Blank (currently delete)
 
     //find out where the pots are
     prevpotvalue[0] = analogRead(potPin1)>>3;
@@ -216,24 +240,32 @@ void setup()
     lcd.createChar(4, emojioff);
     lcd.createChar(5, emojistereoleft);
     lcd.createChar(6, emojistereoright);
+    lcd.createChar(7, emojipolyon);
+
+    /* DEBUG TO CHECK THE EEPROM
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("DEBUG");
+    lcd.setCursor(0,1);
+    lcd.print(midichannel);
+    lcd.setCursor(10,1);
+    lcd.print(region);
+    delay(7000);
+    */
 
     lcd.clear();
     lcd.setCursor(0,0);
     lcd.print("JamaGEN START!");
     lcd.setCursor(0,1);
-    lcd.print("version 1.00");
-
-    delay(500);
+    lcd.print("version 1.10");
+    delay(1000);
   
-  
-  // Serial.begin(9600); // open the serial port at 9600 bps for debug
-  // while (!Serial) {}
-  // delay(1000);
 
     if (!sd.begin(SD_CS_PIN, SD_SCK_MHZ(50))) {
       lcd.clear();
       lcd.setCursor(0,0);
       lcd.print("CANNOT FIND SD");
+      delay(5000);
     }
 
   MIDI.begin(MIDI_CHANNEL_OMNI); // read all channels
@@ -243,6 +275,10 @@ void setup()
   MIDI.setHandleNoteOff(MyHandleNoteOff);
   MIDI.setHandleControlChange(MyHandleCC);
   MIDI.setHandlePitchBend(MyHandlePitchbend);
+
+  // if the eeprom has not been written, we'll need to convert to some default values
+  if (region==255){region=0;}
+  if (midichannel==255){midichannel=1;}
 
   // SET REGION HERE
   if (region==0)
@@ -254,27 +290,7 @@ void setup()
     MIDI.sendControlChange(83,1,1); // set GENMDM to PAL  
   }
   
-
- // List files in root directory and get max file number
-  if (!dirFile.open("/", O_RDONLY)) {
-      lcd.setCursor(0,0);
-      lcd.print("NO ROOT DIR");
-  }
-  while (n < nMax && tfifile.openNext(&dirFile, O_RDONLY)) {
-
-    // Skip directories and hidden files.
-    if (!tfifile.isSubDir() && !tfifile.isHidden()) {
-
-      // Save dirIndex of file in directory.
-      dirIndex[n] = tfifile.dirIndex();
-
-      // Count the files
-      n++;
-    }
-    tfifile.close();
-  }
-
-  delay(700);
+  scandir(0); // scan the SD root for list of files (no save scan)
 
   //initialise all channels
   for (int i = 6; i > 0; i--)
@@ -285,8 +301,24 @@ void setup()
   
 } // void setup
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// THE LOOP!
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 void loop()
 {
+    if (booted==0) // if genajam just booted, launch boot menu if select is held
+    {
+      lcd_key = read_LCD_buttons();
+      if (lcd_key==btnSELECT)
+      {
+      bootprompt();
+      }
+    }
+
+    booted=1;
 
 MIDI.read();
 
@@ -303,63 +335,58 @@ MIDI.read();
   {
       switch (lcd_key) // depending on which button was pushed, we perform an action
       {
-      case btnRIGHT:
-      {
-      tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]+1;
-      if(tfifilenumber[tfichannel-1]==(n)){ // if max files exceeded, loop back to start
-      tfifilenumber[tfichannel-1]=0;
-      }   
-      tfiselect();
-      break;
-      }
-      
-      case btnLEFT:
-      {
-      tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]-1;
-      if(tfifilenumber[tfichannel-1]==-1){ // if min files exceeded, loop back to end
-      tfifilenumber[tfichannel-1]=n-1;
-      }
-      tfiselect();
-      break;
-      }
-      
-      case btnUP:
-      {
-      tfichannel=tfichannel-1;
-      if(tfichannel==(0)){ // if max channels reached, loop around
-      tfichannel=6;
-      }
-      channelselect();
-      break;
-      }
-      
-      case btnDOWN:
-      {
-      tfichannel=tfichannel+1;
-      if(tfichannel==(7)){ // if max channels reached, loop around
-      tfichannel=1;
-      }
-      channelselect();
-      break;
-      }
-      
-      case btnSELECT:
-      {
-      modechange(1);
-      break;
-      }
+        case btnRIGHT:
+        {
+        tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]+1;
+        if(tfifilenumber[tfichannel-1]==(n)){ // if max files exceeded, loop back to start
+        tfifilenumber[tfichannel-1]=0;
+        }   
+        tfiselect();
+        break;
+        }
+        
+        case btnLEFT:
+        {
+        tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]-1;
+        if(tfifilenumber[tfichannel-1]==-1){ // if min files exceeded, loop back to end
+        tfifilenumber[tfichannel-1]=n-1;
+        }
+        tfiselect();
+        break;
+        }
+        
+        case btnUP:
+        {
+        tfichannel=tfichannel-1;
+        if(tfichannel==(0)){ // if max channels reached, loop around
+        tfichannel=6;
+        }
+        channelselect();
+        break;
+        }
+        
+        case btnDOWN:
+        {
+        tfichannel=tfichannel+1;
+        if(tfichannel==(7)){ // if max channels reached, loop around
+        tfichannel=1;
+        }
+        channelselect();
+        break;
+        }
+        
+        case btnSELECT:
+        {
+        modechange(1);
+        break;
+        }
+  
+        case btnPOLY:
+        {
+        modechange(2);
+        break;
+        }
 
-      case btnPOLY:
-      {
-      modechange(2);
-      break;
-      }
-
-      case btnREGION:
-      {
-      regionchange();
-      break;
-      }
       
       } 
       
@@ -373,59 +400,53 @@ MIDI.read();
       
       switch (lcd_key) // depending on which button was pushed, we perform an action
       {
-      case btnRIGHT:
-      {
-      fmscreen = fmscreen+1;
-      if(fmscreen==14) fmscreen=1;   
-      fmparamdisplay();
-      break;
-      }
-      
-      case btnLEFT:
-      {
-      fmscreen = fmscreen-1;
-      if(fmscreen==0) fmscreen=13;   
-      fmparamdisplay();
-      break;
-      }
-      
-      case btnUP:
-      {
-      tfichannel=tfichannel-1;
-      if(tfichannel==(0)){ // if max channels reached, loop around
-      tfichannel=6;
-      }
-      fmparamdisplay();
-      break;
-      }
-      
-      case btnDOWN:
-      {
-      tfichannel=tfichannel+1;
-      if(tfichannel==(7)){ // if max channels reached, loop around
-      tfichannel=1;
-      }
-      fmparamdisplay();
-      break;
-      }
-      
-      case btnSELECT:
-      {
-      modechange(1);
-      break;
-      }
-
-      case btnPOLY:
-      {
-      modechange(2);
-      break;
-      }
-
-      case btnREGION:
-      {
-      regionchange();
-      break;
-      }
+        case btnRIGHT:
+        {
+        fmscreen = fmscreen+1;
+        if(fmscreen==14) fmscreen=1;   
+        fmparamdisplay();
+        break;
+        }
+        
+        case btnLEFT:
+        {
+        fmscreen = fmscreen-1;
+        if(fmscreen==0) fmscreen=13;   
+        fmparamdisplay();
+        break;
+        }
+        
+        case btnUP:
+        {
+        tfichannel=tfichannel-1;
+        if(tfichannel==(0)){ // if max channels reached, loop around
+        tfichannel=6;
+        }
+        fmparamdisplay();
+        break;
+        }
+        
+        case btnDOWN:
+        {
+        tfichannel=tfichannel+1;
+        if(tfichannel==(7)){ // if max channels reached, loop around
+        tfichannel=1;
+        }
+        fmparamdisplay();
+        break;
+        }
+        
+        case btnSELECT:
+        {
+        modechange(1);
+        break;
+        }
+  
+        case btnPOLY:
+        {
+        modechange(2);
+        break;
+        }
       
       }
 
@@ -440,57 +461,69 @@ MIDI.read();
   {
       switch (lcd_key) // depending on which button was pushed, we perform an action
       {
-      case btnRIGHT:
-      {
-      tfichannel=1;
-      tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]+1;
-      if(tfifilenumber[tfichannel-1]==(n)){ // if max files exceeded, loop back to start
-      tfifilenumber[tfichannel-1]=0;
-      }
-      for (int i = 1; i <= 5; i++) {
-        tfifilenumber[i] = tfifilenumber[0];
-      }
-      for (int i = 6; i >= 1; i--) {
-        tfichannel=i;
-        tfiselect();
-      }      
-      break;
-      }
-      
-      case btnLEFT:
-      {
-      tfichannel=1;
-      tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]-1;
-      if(tfifilenumber[tfichannel-1]==-1){ // if min files exceeded, loop back to end
-      tfifilenumber[tfichannel-1]=n-1;
-      }
-      for (int i = 1; i <= 5; i++) {
-        tfifilenumber[i] = tfifilenumber[0];
-      }
-      for (int i = 6; i >= 1; i--) {
-        tfichannel=i;
-        tfiselect();
-      }    
-      break;
-      }
-      
-      case btnSELECT:
-      {
-      modechange(1);
-      break;
-      }
-
-      case btnPOLY:
-      {
-      modechange(2);
-      break;
-      }
-
-      case btnREGION:
-      {
-      regionchange();
-      break;
-      }
+        case btnRIGHT:
+        {
+        tfichannel=1;
+        tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]+1;
+        if(tfifilenumber[tfichannel-1]==(n)){ // if max files exceeded, loop back to start
+        tfifilenumber[tfichannel-1]=0;
+        }
+        for (int i = 1; i <= 5; i++) {
+          tfifilenumber[i] = tfifilenumber[0];
+        }
+        for (int i = 6; i >= 1; i--) {
+          tfichannel=i;
+          tfiselect();
+        }      
+        break;
+        }
+        
+        case btnLEFT:
+        {
+        tfichannel=1;
+        tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]-1;
+        if(tfifilenumber[tfichannel-1]==-1){ // if min files exceeded, loop back to end
+        tfifilenumber[tfichannel-1]=n-1;
+        }
+        for (int i = 1; i <= 5; i++) {
+          tfifilenumber[i] = tfifilenumber[0];
+        }
+        for (int i = 6; i >= 1; i--) {
+          tfichannel=i;
+          tfiselect();
+        }    
+        break;
+        }
+  
+        case btnUP:
+        {
+        saveprompt();
+        break;
+        }
+        
+        case btnDOWN:
+        {
+        saveprompt();
+        break;
+        }
+        
+        case btnSELECT:
+        {
+        modechange(1);
+        break;
+        }
+  
+        case btnPOLY:
+        {
+        modechange(2);
+        break;
+        }
+  
+        case btnBLANK:
+        {
+        deletefile();
+        break;
+        }
       
       } 
       
@@ -503,39 +536,45 @@ MIDI.read();
       
       switch (lcd_key) // depending on which button was pushed, we perform an action
       {
-      case btnRIGHT:
-      {
-      fmscreen = fmscreen+1;
-      if(fmscreen==14) fmscreen=1;   
-      fmparamdisplay();
-      break;
-      }
-      
-      case btnLEFT:
-      {
-      fmscreen = fmscreen-1;
-      if(fmscreen==0) fmscreen=13;   
-      fmparamdisplay();
-      break;
-      }
-      
-      case btnSELECT:
-      {
-      modechange(1);
-      break;
-      }
-
-      case btnPOLY:
-      {
-      modechange(2);
-      break;
-      }
-
-      case btnREGION:
-      {
-      regionchange();
-      break;
-      }
+        case btnRIGHT:
+        {
+        fmscreen = fmscreen+1;
+        if(fmscreen==14) fmscreen=1;   
+        fmparamdisplay();
+        break;
+        }
+        
+        case btnLEFT:
+        {
+        fmscreen = fmscreen-1;
+        if(fmscreen==0) fmscreen=13;   
+        fmparamdisplay();
+        break;
+        }
+  
+        case btnUP:
+        {
+        saveprompt();
+        break;
+        }
+        
+        case btnDOWN:
+        {
+        saveprompt();
+        break;
+        }
+        
+        case btnSELECT:
+        {
+        modechange(1);
+        break;
+        }
+  
+        case btnPOLY:
+        {
+        modechange(2);
+        break;
+        }
       
       }
 
@@ -548,6 +587,11 @@ MIDI.read();
 
   
 } // void loop
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// BUTTON STUFF
+/////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 int read_LCD_buttons() // function for reading the buttons
@@ -605,7 +649,7 @@ int read_LCD_buttons() // function for reading the buttons
 
       if (button07 == LOW) {         // check if the input is LOW
         buttonpushed = millis();
-        return btnREGION;
+        return btnBLANK;
       }
     
     }
@@ -613,6 +657,12 @@ int read_LCD_buttons() // function for reading the buttons
   return btnNONE;  // when all others fail, return this...
 
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// MODE CHANGES
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void modechange(int modetype) // when the mode buttons are changed, cycle the modes
 {
@@ -724,36 +774,6 @@ void modechange(int modetype) // when the mode buttons are changed, cycle the mo
   } // switch
 }
 
-void regionchange()
-{
-  // increment the button
-  if (region==0) 
-  {region=1;}
-  else 
-  {region=0;}
-
-  // now send the CC, display message and record to EEPROM
-  if (region==0)
-  {
-    messagestart = millis();
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("REGION | NTSC");
-    refreshscreen=1;  
-    MIDI.sendControlChange(83,75,1); // set GENMDM to NTSC
-    EEPROM.write(0, 0);
-  }
-  else
-  {
-    messagestart = millis();
-    lcd.clear();
-    lcd.setCursor(0,0);
-    lcd.print("REGION | PAL");
-    refreshscreen=1;  
-    MIDI.sendControlChange(83,1,1); // set GENMDM to PAL
-    EEPROM.write(0, 1);
-  }
-}
 
 void modechangemessage() // display temporary message
 {
@@ -791,6 +811,497 @@ if ((millis() - messagestart) > messagedelay && refreshscreen == 1) {
   } // end mode check
 } // end message refresh
 }
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// BOOT FUNCTIONS
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void scandir(bool saved)
+{
+
+  // List files in root directory and get max file number
+  if (!dirFile.open("/", O_RDONLY)) {
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("NO ROOT DIR");
+    delay(5000);
+  }
+    
+  n=0; // reset the file count
+  while (n < nMax && tfifile.openNext(&dirFile, O_RDONLY)) {
+
+    // Skip directories
+    if (!tfifile.isSubDir() && !tfifile.isHidden()) {
+
+      // Save dirIndex of file in directory.
+      dirIndex[n] = tfifile.dirIndex();
+
+      // if saved, find the name of the new file
+      if (saved==1)
+      {
+        char tfifilename[MaxNumberOfChars + 1];
+        tfifile.getName(tfifilename, MaxNumberOfChars);
+        tfifilename[MaxNumberOfChars]=0; //ensure  termination
+
+        /* debug
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print(tfifilename);
+        lcd.setCursor(0,1);
+        lcd.print(tfifile.dirIndex());
+        lcd.setCursor(5,1);
+        lcd.print(n);
+        delay(300);
+        */
+
+        if (strcmp(tfifilename, savefilefull) == 0)
+        {
+          /* debug
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("MATCH!!");
+          delay(5000);
+          */
+          for (int i = 0; i < 6; i++)
+          {
+            tfifilenumber[i] = n; // set the new file cursor to the new save we just made
+          }
+        }
+      }
+
+      // Count the files
+      n++;
+    }
+    tfifile.close();
+  }
+}
+
+void bootprompt() //when genajam is booting, if select is held, open this boot menu
+{
+
+      uint8_t currentpotvalue[4];
+      menuprompt=0;
+      
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("MIDI CH / REGION");
+
+      //trap in a loop while waiting for a prompt
+      while(menuprompt==0) {
+
+      MIDI.read(); // keep reading midi while in loop
+
+      // read the current pot values
+      currentpotvalue[0] = analogRead(potPin1)>>3;
+      currentpotvalue[1] = analogRead(potPin2)>>3;
+      currentpotvalue[2] = analogRead(potPin3)>>3;
+      currentpotvalue[3] = analogRead(potPin4)>>3;
+
+      midichannel = round((currentpotvalue[0])/8)+1;
+      lcd.setCursor(0,1);
+      printspaces((round(currentpotvalue[0])/8)+1);
+      lcd.print(round((currentpotvalue[0])/8)+1);
+
+      lcd.setCursor(12,1);
+
+      if (currentpotvalue[3]<64)
+      {
+      lcd.print("NTSC");  
+      MIDI.sendControlChange(83,75,1); // set GENMDM to NTSC
+      }
+      else
+      {
+      lcd.print(" PAL");
+      MIDI.sendControlChange(83,1,1); // set GENMDM to PAL  
+      }
+        
+      lcd_key = read_LCD_buttons();
+      switch (lcd_key) // depending on which button was pushed, we perform an action
+      {
+        case btnRIGHT: case btnLEFT:
+        {
+        menuprompt=1; // exit menu prompt
+
+        // set region in eeprom
+        if (currentpotvalue[3]<64)
+        {
+        EEPROM.write(0, 0);  
+        }
+        else
+        {
+        EEPROM.write(0, 1);  
+        }
+
+        EEPROM.write(1, midichannel);  
+        
+        messagestart = millis();
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("saved to eeprom!");
+        refreshscreen=1;  
+        break;
+        }
+        
+      }
+    }
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// FILE FUNCTIONS
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+void saveprompt()
+{
+
+      menuprompt=0;
+      
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("UP: overwrite");
+      lcd.setCursor(0,1);
+      lcd.print("DOWN: save new");
+      
+      //trap in a loop while waiting for a prompt
+      while(menuprompt==0) {
+      MIDI.read(); // keep reading midi while in loop
+      lcd_key = read_LCD_buttons();
+      switch (lcd_key) // depending on which button was pushed, we perform an action
+      {
+        case btnRIGHT: case btnLEFT: case btnSELECT:
+        {
+        menuprompt=1; // exit menu prompt
+        messagestart = millis();
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("save cancelled");
+        refreshscreen=1;  
+        break;
+        }
+  
+        case btnUP: // overwrite save
+        {
+        menuprompt=1; // exit menu prompt
+        saveoverwrite();
+        break;
+        }
+        
+        case btnDOWN: // save new
+        {
+        menuprompt=1; // exit menu prompt
+        savenew();
+        break;
+        }
+       
+      }
+    }
+}
+
+
+void savenew()
+{
+    
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("SAVING...");
+    lcd.setCursor(0,1);
+    lcd.print("please wait");
+    
+    //scan for new patch files so you don't overwrite
+    while (savenumber < 1000 && tfifile.open(savefilefull, O_RDONLY)) {
+    // Skip directories and hidden files.
+    if (!tfifile.isSubDir() && !tfifile.isHidden()) {
+      // move on to the next patch
+      savenumber++;
+      sprintf (savefilefull, "newpatch%03d.tfi",savenumber);
+      tfifile.close();
+      }
+    }
+    
+    if (!tfifile.open(savefilefull, O_WRONLY | O_CREAT)) {
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("FILE SAVE ERROR");
+      delay(5000);
+    }
+
+    // convert fmsettings back into a tfi file
+
+    int tfiarray[42];
+    tfichannel=1;
+
+    tfiarray[0] = round(fmsettings[tfichannel-1][0]/16); //Algorithm 
+    tfiarray[1] = round(fmsettings[tfichannel-1][1]/16); //Feedback
+
+    tfiarray[2] = round(fmsettings[tfichannel-1][2]/8);   //OP1 Multiplier
+    tfiarray[12] = round(fmsettings[tfichannel-1][12]/8); //OP3 Multiplier
+    tfiarray[22] = round(fmsettings[tfichannel-1][22]/8); //OP2 Multiplier
+    tfiarray[32] = round(fmsettings[tfichannel-1][32]/8); //OP4 Multiplier
+
+    tfiarray[3] = round(fmsettings[tfichannel-1][3]/32);   //OP1 Detune
+    tfiarray[13] = round(fmsettings[tfichannel-1][13]/32); //OP3 Detune
+    tfiarray[23] = round(fmsettings[tfichannel-1][23]/32); //OP2 Detune
+    tfiarray[33] = round(fmsettings[tfichannel-1][33]/32); //OP4 Detune
+
+    tfiarray[4] = 127-fmsettings[tfichannel-1][4];   //OP1 Total Level
+    tfiarray[14] = 127-fmsettings[tfichannel-1][14]; //OP3 Total Level
+    tfiarray[24] = 127-fmsettings[tfichannel-1][24]; //OP2 Total Level
+    tfiarray[34] = 127-fmsettings[tfichannel-1][34]; //OP4 Total Level
+
+    tfiarray[5] = round(fmsettings[tfichannel-1][5]/32);    //OP1 Rate Scaling
+    tfiarray[15] = round(fmsettings[tfichannel-1][15]/32);  //OP3 Rate Scaling
+    tfiarray[25] = round(fmsettings[tfichannel-1][25]/32);  //OP2 Rate Scaling
+    tfiarray[35] = round(fmsettings[tfichannel-1][35]/32);  //OP4 Rate Scaling
+
+    tfiarray[6] = round(fmsettings[tfichannel-1][6]/4);    //OP1 Attack Rate
+    tfiarray[16] = round(fmsettings[tfichannel-1][16]/4);  //OP3 Attack Rate
+    tfiarray[26] = round(fmsettings[tfichannel-1][26]/4);  //OP2 Attack Rate
+    tfiarray[36] = round(fmsettings[tfichannel-1][36]/4);  //OP4 Attack Rate
+
+    tfiarray[7] = round(fmsettings[tfichannel-1][7]/4);    //OP1 1st Decay Rate
+    tfiarray[17] = round(fmsettings[tfichannel-1][17]/4);  //OP3 1st Decay Rate
+    tfiarray[27] = round(fmsettings[tfichannel-1][27]/4);  //OP2 1st Decay Rate
+    tfiarray[37] = round(fmsettings[tfichannel-1][37]/4);  //OP4 1st Decay Rate
+
+    tfiarray[10] = round((127-fmsettings[tfichannel-1][10])/8);  //OP1 2nd Total Level
+    tfiarray[20] = round((127-fmsettings[tfichannel-1][20])/8);  //OP3 2nd Total Level
+    tfiarray[30] = round((127-fmsettings[tfichannel-1][30])/8);  //OP2 2nd Total Level
+    tfiarray[40] = round((127-fmsettings[tfichannel-1][40])/8);  //OP4 2nd Total Level
+
+    tfiarray[8] = round(fmsettings[tfichannel-1][8]/8);    //OP1 2nd Decay Rate
+    tfiarray[18] = round(fmsettings[tfichannel-1][18]/8);  //OP3 2nd Decay Rate
+    tfiarray[28] = round(fmsettings[tfichannel-1][28]/8);  //OP2 2nd Decay Rate
+    tfiarray[38] = round(fmsettings[tfichannel-1][38]/8);  //OP4 2nd Decay Rate
+
+    tfiarray[9] = round(fmsettings[tfichannel-1][9]/8);    //OP1 Release Rate
+    tfiarray[19] = round(fmsettings[tfichannel-1][19]/8);  //OP3 Release Rate
+    tfiarray[29] = round(fmsettings[tfichannel-1][29]/8);  //OP2 Release Rate
+    tfiarray[39] = round(fmsettings[tfichannel-1][39]/8);  //OP4 Release Rate
+
+    tfiarray[11] = round(fmsettings[tfichannel-1][11]/8);  //OP1 SSG-EG
+    tfiarray[21] = round(fmsettings[tfichannel-1][21]/8);  //OP3 SSG-EG
+    tfiarray[31] = round(fmsettings[tfichannel-1][31]/8);  //OP2 SSG-EG
+    tfiarray[41] = round(fmsettings[tfichannel-1][41]/8);  //OP4 SSG-EG
+    
+    for (int i=0; i<42; i++) {
+      tfifile.write(tfiarray[i]), HEX;
+    }
+
+    tfifile.close();
+
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("SAVED!");
+    lcd.setCursor(0,1);
+    lcd.print(savefilefull);
+    delay(2000);
+    messagestart = millis();
+    refreshscreen=1;
+
+    dirFile.close(); // close the root and reopen
+    scandir(1); // while scanning the directory, find the file we just made
+
+    //show filename on screen
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.write(byte(2));
+    lcd.print(" ");     
+    lcd.print(" ");
+    lcd.write(byte(1));
+    printzeros(tfifilenumber[tfichannel-1]+1);
+    lcd.print(tfifilenumber[tfichannel-1]+1);
+    lcd.print("/");
+    printzeros(n);
+    lcd.print(n);
+    lcd.setCursor(0,1);
+    lcd.print(savefilefull);
+
+}
+
+void saveoverwrite()
+{
+    
+    // let's open the file at the file cursor
+    if (!tfifile.open(&dirFile, dirIndex[tfifilenumber[tfichannel-1]], O_WRONLY)) {
+      lcd.clear();
+      lcd.setCursor(0,0);
+      lcd.print("CANNOT READ TFI");
+    }
+    
+    // convert fmsettings back into a tfi file
+
+    int tfiarray[42];
+    tfichannel=1;
+
+    tfiarray[0] = round(fmsettings[tfichannel-1][0]/16); //Algorithm 
+    tfiarray[1] = round(fmsettings[tfichannel-1][1]/16); //Feedback
+
+    tfiarray[2] = round(fmsettings[tfichannel-1][2]/8);   //OP1 Multiplier
+    tfiarray[12] = round(fmsettings[tfichannel-1][12]/8); //OP3 Multiplier
+    tfiarray[22] = round(fmsettings[tfichannel-1][22]/8); //OP2 Multiplier
+    tfiarray[32] = round(fmsettings[tfichannel-1][32]/8); //OP4 Multiplier
+
+    tfiarray[3] = round(fmsettings[tfichannel-1][3]/32);   //OP1 Detune
+    tfiarray[13] = round(fmsettings[tfichannel-1][13]/32); //OP3 Detune
+    tfiarray[23] = round(fmsettings[tfichannel-1][23]/32); //OP2 Detune
+    tfiarray[33] = round(fmsettings[tfichannel-1][33]/32); //OP4 Detune
+
+    tfiarray[4] = 127-fmsettings[tfichannel-1][4];   //OP1 Total Level
+    tfiarray[14] = 127-fmsettings[tfichannel-1][14]; //OP3 Total Level
+    tfiarray[24] = 127-fmsettings[tfichannel-1][24]; //OP2 Total Level
+    tfiarray[34] = 127-fmsettings[tfichannel-1][34]; //OP4 Total Level
+
+    tfiarray[5] = round(fmsettings[tfichannel-1][5]/32);    //OP1 Rate Scaling
+    tfiarray[15] = round(fmsettings[tfichannel-1][15]/32);  //OP3 Rate Scaling
+    tfiarray[25] = round(fmsettings[tfichannel-1][25]/32);  //OP2 Rate Scaling
+    tfiarray[35] = round(fmsettings[tfichannel-1][35]/32);  //OP4 Rate Scaling
+
+    tfiarray[6] = round(fmsettings[tfichannel-1][6]/4);    //OP1 Attack Rate
+    tfiarray[16] = round(fmsettings[tfichannel-1][16]/4);  //OP3 Attack Rate
+    tfiarray[26] = round(fmsettings[tfichannel-1][26]/4);  //OP2 Attack Rate
+    tfiarray[36] = round(fmsettings[tfichannel-1][36]/4);  //OP4 Attack Rate
+
+    tfiarray[7] = round(fmsettings[tfichannel-1][7]/4);    //OP1 1st Decay Rate
+    tfiarray[17] = round(fmsettings[tfichannel-1][17]/4);  //OP3 1st Decay Rate
+    tfiarray[27] = round(fmsettings[tfichannel-1][27]/4);  //OP2 1st Decay Rate
+    tfiarray[37] = round(fmsettings[tfichannel-1][37]/4);  //OP4 1st Decay Rate
+
+    tfiarray[10] = round((127-fmsettings[tfichannel-1][10])/8);  //OP1 2nd Total Level
+    tfiarray[20] = round((127-fmsettings[tfichannel-1][20])/8);  //OP3 2nd Total Level
+    tfiarray[30] = round((127-fmsettings[tfichannel-1][30])/8);  //OP2 2nd Total Level
+    tfiarray[40] = round((127-fmsettings[tfichannel-1][40])/8);  //OP4 2nd Total Level
+
+    tfiarray[8] = round(fmsettings[tfichannel-1][8]/8);    //OP1 2nd Decay Rate
+    tfiarray[18] = round(fmsettings[tfichannel-1][18]/8);  //OP3 2nd Decay Rate
+    tfiarray[28] = round(fmsettings[tfichannel-1][28]/8);  //OP2 2nd Decay Rate
+    tfiarray[38] = round(fmsettings[tfichannel-1][38]/8);  //OP4 2nd Decay Rate
+
+    tfiarray[9] = round(fmsettings[tfichannel-1][9]/8);    //OP1 Release Rate
+    tfiarray[19] = round(fmsettings[tfichannel-1][19]/8);  //OP3 Release Rate
+    tfiarray[29] = round(fmsettings[tfichannel-1][29]/8);  //OP2 Release Rate
+    tfiarray[39] = round(fmsettings[tfichannel-1][39]/8);  //OP4 Release Rate
+
+    tfiarray[11] = round(fmsettings[tfichannel-1][11]/8);  //OP1 SSG-EG
+    tfiarray[21] = round(fmsettings[tfichannel-1][21]/8);  //OP3 SSG-EG
+    tfiarray[31] = round(fmsettings[tfichannel-1][31]/8);  //OP2 SSG-EG
+    tfiarray[41] = round(fmsettings[tfichannel-1][41]/8);  //OP4 SSG-EG
+    
+    for (int i=0; i<42; i++) {
+      tfifile.write(tfiarray[i]), HEX;
+    }
+
+    //get filename
+    char tfifilename[MaxNumberOfChars + 1];
+    tfifile.getName(tfifilename, MaxNumberOfChars);
+    tfifilename[MaxNumberOfChars]=0; //ensure  termination
+
+    tfifile.close();
+
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("SAVED!");
+    lcd.setCursor(0,1);
+    lcd.print(tfifilename);
+    delay(2000);
+    messagestart = millis();
+    refreshscreen=1;
+}
+
+void deletefile() // delete the file at the file cursor
+{
+
+    menuprompt=0;
+    
+    lcd.clear();
+    lcd.setCursor(0,0);
+    lcd.print("CONFIRM DELETE");
+    lcd.setCursor(0,1);
+    lcd.print("press again: y");
+    delay(1000);
+    
+    //trap in a loop while waiting for a prompt
+    while(menuprompt==0) {
+      MIDI.read(); // keep reading midi while in loop
+      lcd_key = read_LCD_buttons();
+      switch (lcd_key) // depending on which button was pushed, we perform an action
+      {
+        case btnRIGHT: case btnLEFT: case btnSELECT:
+        {
+        menuprompt=1; // exit menu prompt
+        messagestart = millis();
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("cancelled");
+        refreshscreen=1;  
+        break;
+        }
+        
+        case btnBLANK: // confirm
+        {
+        menuprompt=1; // exit menu prompt
+
+        // let's open the file at the file cursor
+        if (!tfifile.open(&dirFile, dirIndex[tfifilenumber[tfichannel-1]], O_WRONLY)) {
+          lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("CANNOT READ TFI");
+        }
+    
+        //get filename
+        char tfifilename[MaxNumberOfChars + 1];
+        tfifile.getName(tfifilename, MaxNumberOfChars);
+        tfifilename[MaxNumberOfChars]=0; //ensure  termination
+    
+        if (!tfifile.remove()) {
+        lcd.clear();
+          lcd.setCursor(0,0);
+          lcd.print("DELETE ERROR");
+        }
+    
+        lcd.clear();
+        lcd.setCursor(0,0);
+        lcd.print("FILE DELETED!");
+        lcd.setCursor(0,1);
+        lcd.print(tfifilename);
+        delay(4000);
+        messagestart = millis();
+        refreshscreen=1;
+    
+        dirFile.close(); // close the root and reopen
+        scandir(0); // rescan now the file is gone
+    
+        // now the file is gone, go backwards one file
+        tfichannel=1;
+        tfifilenumber[tfichannel-1] = tfifilenumber[tfichannel-1]-1;
+        if(tfifilenumber[tfichannel-1]<=-1){ // if min files exceeded, loop back to end
+        tfifilenumber[tfichannel-1]=n-1;
+        }
+        for (int i = 1; i <= 5; i++) {
+          tfifilenumber[i] = tfifilenumber[0];
+        }
+        for (int i = 6; i >= 1; i--) {
+          tfichannel=i;
+          tfiselect();
+        }      
+
+
+
+        break;
+        }
+      
+      }
+    }
+
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// TFI SELECTING AND LOADING
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void tfiselect() //load a tfi , send the midi, update screen
 {
@@ -854,6 +1365,7 @@ void channelselect() //select a new channel, display current tfi on screen
     if (!tfifile.open(&dirFile, dirIndex[tfifilenumber[tfichannel-1]], O_RDONLY)) {
       lcd.setCursor(0,0);
       lcd.print("CANNOT READ TFI");
+      delay(5000);
   }
 
      //get filename
@@ -1025,6 +1537,12 @@ void tfisend(int opnarray[42], int sendchannel)
     
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// FM EDITING FUNCTIONS
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 void fmparamdisplay()
 {
 
@@ -1074,10 +1592,26 @@ void fmparamdisplay()
       i = fmsettings[tfichannel-1][1];
       printspaces(i);
       lcd.print(i);
+
+      // special case to display pan
       lcd.setCursor(13,1);
       i = fmsettings[tfichannel-1][44];
-      printspaces(i);
-      lcd.print(i);
+        if ((i>=0) && (i<32))
+        {
+        lcd.print("OFF");  
+        }
+        else if ((i>=32) && (i<64))
+        {
+        lcd.print(" L ");    
+        }
+        else if ((i>=64) && (i<96))
+        {
+        lcd.print(" R ");    
+        }
+        else if ((i>=96) && (i<128))
+        {
+        lcd.print(" C ");    
+        }  
       break;
     }
 
@@ -1418,6 +1952,26 @@ void operatorparamdisplay()
       lcd.print("  ");
       lcd.print(round(currentpotvalue[i]/16));    
       }
+
+      else if (fmscreen==1 && i==3)
+      {
+        if ((currentpotvalue[i]>=0) && (currentpotvalue[i]<32))
+        {
+        lcd.print("OFF");  
+        }
+        else if ((currentpotvalue[i]>=32) && (currentpotvalue[i]<64))
+        {
+        lcd.print(" L ");    
+        }
+        else if ((currentpotvalue[i]>=64) && (currentpotvalue[i]<96))
+        {
+        lcd.print(" R ");    
+        }
+        else if ((currentpotvalue[i]>=96) && (currentpotvalue[i]<128))
+        {
+        lcd.print(" C ");    
+        }  
+      }
       
       else if (fmscreen==12) // special case for amp modulation on off
       {
@@ -1622,6 +2176,12 @@ void fmccsend(byte potnumber, uint8_t potvalue)
 
 }
 
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// MISC TOOLS
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
 void printzeros(int zeronum) // function for printing leading zeros to 3 digit numbers
 {
   if (zeronum<100) lcd.print("0");
@@ -1635,7 +2195,10 @@ void printspaces(int zeronum) // function for printing leading spaces to 3 digit
 }
 
 
-// ============= MIDI FUNCTIONS =========================
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////// MIDI FUNCTIONS
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 void MyHandleNoteOn(byte channel, byte pitch, byte velocity) {
 
@@ -1644,8 +2207,8 @@ velocity = (int)(pow((float)velocity / 127.0f, 0.17f) * 127.0f);
 
 bool repeatnote=0;
 
-if (mode==3 || mode==4) // if we're in poly mode
-{
+if (mode==3 || mode==4) { // if we're in poly mode
+if (channel == midichannel) {  //and is set to the global midi channel
 
   // here's a fun feature of sustain, you can hit the same note twice
   // let's turn it off and on again here
@@ -1697,7 +2260,7 @@ if (mode==3 || mode==4) // if we're in poly mode
       MIDI.read();     
     }
 
-    if (polypan>64) // secret stereo mode
+    if (polypan>64) // stereo spread mode
     {
       long randpan = random(33,127);
       MIDI.sendControlChange(77,randpan,randchannel+1);
@@ -1709,20 +2272,28 @@ if (mode==3 || mode==4) // if we're in poly mode
     polyon[randchannel]=1; // turn it on just in case
     noteheld[randchannel] = 1; // the key is currently held
   } // if repeatnote
-} // if mode 3
+
+  if (menuprompt==1&&refreshscreen==0) // if we are not in a menu
+  {
+  lcd.setCursor(0,0); // poly midi note on graphic
+  lcd.write(byte(7));
+  }
+  
+}} // if mode 3 and 4 and channel #
 else // otherwise, just revert to midi thru
 {
   MIDI.sendNoteOn(pitch, velocity, channel);  
+  lcd.setCursor(0,0); // channel midi note on graphic
+  lcd.print("#");
 }
 } // void note on
 
 
 void MyHandleNoteOff(byte channel, byte pitch, byte velocity) {
-// note: channel here is useless, as it's getting the channel from the keyboard 
 
-if (mode==3 || mode==4) // if we're in poly mode
-{    
-
+if (mode==3 || mode==4) { // if we're in poly mode and midi channel 1
+if (channel == midichannel) {  //and is set to the global midi channel
+  
   for (int i = 0; i <= 5; i++) // we know the note but not the channel
   {
     MIDI.read();
@@ -1742,12 +2313,28 @@ if (mode==3 || mode==4) // if we're in poly mode
         noteheld[i] = 0; // the key is no longer being held down
         break;
       }
-    }
-  } 
-} // if mode 3
+    }  
+  }
+
+  //count the notes and if all notes are off, turn off the midi on graphic
+  notecounter=0;
+  for (int i = 0; i <= 5; i++) // check if all notes are off
+  {
+    if(noteheld[i]==1)notecounter++;
+  }
+  if (notecounter==0&&menuprompt==1&&refreshscreen==0) // also make sure we aren't in a menu
+  {
+    lcd.setCursor(0,0); // poly midi note off graphic
+    lcd.write(byte(2));
+  }
+    
+   
+}} // if mode 3 and 4 AND midi channel #
 else // otherwise, just revert to midi thru
 {
   MIDI.sendNoteOff(pitch, velocity, channel);  
+  lcd.setCursor(0,0); // channel midi note off graphic
+  lcd.write(byte(0));
 }
 } // void note off
 
