@@ -12,6 +12,8 @@ A physical front end interface for GenMDM for Mega Drive built by Catskull Elect
 
 Note: PCM mode switching is not supported by Genajam but can be still enabled in MONO mode. There is a bug in GENMDM where Decay 2 only works on OP1.
 
+GENajam is written in Arduino and runs on the MightyCore ATMega1284 (https://github.com/MCUdude/MightyCore). It uses the MIDI library by FortySevenEffects (https://github.com/FortySevenEffects/arduino_midi_library) and the SDfat library by Greiman (https://github.com/greiman/SdFat).
+
 # Instructions
 
 There is a folder of sample TFI files that you can test by loading them to the root of an SD card. Load the TFI samples under the TFI folder in this GITHUB to the root of an SD card formatted for Arduino. You can currently load 64 files maximum.
