@@ -20,6 +20,15 @@ There is a folder of sample TFI files that you can test by loading them to the r
 
 You can find more TFI files here: https://little-scale.blogspot.com/2013/02/all-sega-genesis-mega-drive-tfi.html
 
+The correct order of plugging is:
+- plug your midi keyboard (or USB midi dongle) into the red catskull DIN to 3.5mm connector and then plug into **IN** on Genajam.
+- using the 3.5mm to 3.5mm aux chord, plug from **OUT** on Genajam to the 3.5mm midi input on genMDM.
+- insert the genMDM cartridge to your Mega Drive / Genesis and turn it on. You will hear a tone.
+- plug the genMDM unit into controller port 2 of the Mega Drive / Genesis. You will hear a chord.
+- plug the usb-C cable into Genajam to turn it on.
+
+When you go to turn on your Mega Drive later, turn on Genajam **after** the Mega Drive is turned on.
+
 GENajam launches in POLY mode, giving you 6 notes of polyphony over channel 1. Press the **LEFT** and **RIGHT** buttons to scroll through the presets.
 
 ## Buttons and Functions
