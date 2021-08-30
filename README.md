@@ -84,17 +84,17 @@ A good way to think of this is that OP4 is the oscilator. Turn down OP1, 2 and 3
 
 Check out the SMSPower page to see all the algorithms.
 
-**Feedback** - Feedback is only enabled on OP1, so if that operator is turned down, you won't hear anything happening. I find that OP1 has to be at full 127 volume (TL) most of the time.
+**Feedback** - Feedback is only enabled on OP1, so if that operator is turned down, you won't hear anything happening. I find that OP1 has to be at near max volume (120 or above) for full effect to be heard.
 
-**Pan** - The YM2612 only supports hard left, hard right and center pan. Pan at values lower than 32 will simply mute.
+**Pan** - The YM2612 only supports hard left, hard right and center pan. Moving the knob all the way left mutes the sound.
 
-**TL or Volume** - This is simply the volume of each operator (and the amount it modulates the operator before it). As I said before, make sure OP4 is cranked as it's usually the oscillator at the start of the chain.
+**OP Volume** - This is simply the volume of each operator (and the amount it modulates the operator before it). As I said before, make sure OP4 is cranked as it's usually the oscillator at the start of the chain.
 
 **Multiple** - This is the multiplification factor on the frequency, or a kind of octave selector for the operator. The YM2612 has some nice pitched multipliers, so it's not just like a oscillator tuning amount, it gives you some nice tuning in musical steps.
 
 **Rate Scaling** - This is how much envelope should be scaled as you move up the keyboard. In simple terms, you could have a sound with a slow attack, decay and release and as you play higher up the keyboard, this amount gets shorted.
 
-**Detune** - Honestly, this is so subtle that you might turn this knob and be scratching your head, wondering if it does anything.
+**Detune** - Detune on the YM2612 works as a multiplication of the Multiple. Simply put, the higher the Multiple value is, the more this function will detune the sound. To hear this in action, choose Algorithm 0, set OP Volume to 0 for OP 1 and 2 and set to 110 for OP 3 and 4. Set the Multiple to just above 42 for both OP 3 and 4. Now play with the detune on OP 3 and you'll hear it shift very, very slightly. Great job Yamaha.
 
 **Attack, Decay 1, Decay 2, Release, TL2** - The Yamaha envelope is kinda unique. Attack, Decay and Release are as expected. However, you get a second Decay to play with and TL2 should really be called "Sustain". If you check out the SMSpower page, you'll see a great diagram of the envelope. The values are actually variable angles at each part of the envelope and may behave differently than your standard subtractive synth. For example, a low attack value is actually slow and a high value is fast. Same goes for release and decay. TL2 is just a volume control instead of an angle and annoyingly, the value is subtractive, so a low value means not much drop in volume at sustain and a high amount means lots of drop in volume at sustain. Another un-fun fact is there is a hard-coded bug in GENMDM where Decay 2 across all operators route to OP1. That means Decay 2 is permenantly set to 64 for OP2, OP3 and OP4 and can't be changed.
 
