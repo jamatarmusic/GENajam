@@ -76,7 +76,7 @@ https://www.smspower.org/maxim/Documents/YM2612
 
 However, if you are slightly familiar with FM editing, here are some quick tips on the implementation in GENajam:
 
-**Operators and Algorithms** - GENajam lets you edit all 4 operators at once, giving you powerful simultanious access over things such as operator level, frequency multipliers, attack and release very quickly to sculpt your sound live. An important note about the operators in the Mega Drive is that usually OP4 is the **first** operator in the series, unlike a Yamaha Reface DX or Yamaha DX7. This means that when you head into editing, especially in the TL (total level) section, you want to start with OP4 as the first carrier and then work backwards. OP4 is usually the primary oscillator and reducing this operator to 0 will mute the sound.
+**Operators and Algorithms** - GENajam lets you edit all 4 operators at once, giving you powerful simultanious access over things such as operator level, frequency multipliers, attack and release very quickly to sculpt your sound live. An important note about the operators in the Mega Drive is that usually OP4 is the **first** operator in the series, unlike a Yamaha Reface DX or Yamaha DX7. This means that when you start patch editing, especially in the **OP Volume** section, you want to start with OP4 as the first carrier and then work backwards. OP4 is usually the primary oscillator and reducing this operator to 0 will mute the sound.
 
 For example, algorithm 0 will flow like this: OP1 -> OP2 -> OP3 -> OP4
 
