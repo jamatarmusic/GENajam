@@ -84,7 +84,7 @@ A good way to think of this is that OP4 is the oscilator. Turn down OP1, 2 and 3
 
 Check out the SMSPower page to see all the algorithms.
 
-**Feedback** - Feedback is only enabled on OP1, so if that operator is turned down, you won't hear anything happening. I find that OP1 has to be at near max volume (120 or above) for full effect to be heard.
+**Feedback** - Feedback is only enabled on OP1, so if that operator is turned down, you won't hear anything happening. I find that OP1 has to be at near max volume (120 or above) for full effect to be heard. By using Algorithm 7, you can turn all OPs down to 0 except for OP1 and turn up feedback for a rare Mega Drive saw wave. Pushing Feedback to high can result in a kind of white noise distortion.
 
 **Pan** - The YM2612 only supports hard left, hard right and center pan. Moving the knob all the way left mutes the sound.
 
