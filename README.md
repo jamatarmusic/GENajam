@@ -5,6 +5,8 @@ Overview video: https://www.youtube.com/watch?v=uE3FbmMKl-U
 
 Connection guide (and history): https://www.youtube.com/watch?v=WcB8032SWHI
 
+WINDOWS v1.1 FIRMWARE UPDATER: https://github.com/jamatarmusic/GENajam/tree/master/firmware%20update
+
 To see an example of what this can do: https://www.youtube.com/watch?v=_nLA5kXui2M
 *This is a live improv GENajam set played over some multi-tracked GENajam recorded material.*
 
