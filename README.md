@@ -20,7 +20,7 @@ GENajam is written in Arduino and runs on the MightyCore ATMega1284 (https://git
 
 There is a folder of sample TFI files that you can test by loading them to the root of an SD card. Load the TFI samples under the TFI folder in this GITHUB to the root of an SD card formatted for Arduino. You can currently load a maximum of 999 files.
 
-You can find more TFI files here: https://little-scale.blogspot.com/2013/02/all-sega-genesis-mega-drive-tfi.html
+You can find more TFI files here: https://www.dropbox.com/s/kz5h8phgp4273vx/TFI_WITH_FRIENDLY_NAMES.zip?dl=0
 
 To plug Genajam and genMDM into your Mega Drive / Genesis:
 - plug your midi keyboard (or USB midi dongle) into the red catskull DIN to 3.5mm connector and then plug into **IN** on Genajam.
